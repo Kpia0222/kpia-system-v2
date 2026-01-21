@@ -48,7 +48,7 @@ export default function Home() {
         <Sparkles count={4000} scale={200} size={2} speed={0.3} color="#ff8800" />
 
         <EffectComposer>
-          <Bloom intensity={0.01} luminanceThreshold={0.01} mipmapBlur />
+          {/* <Bloom intensity={0.01} luminanceThreshold={0.01} mipmapBlur /> */}
           <Noise opacity={0.05} />
         </EffectComposer>
 
