@@ -5,6 +5,8 @@ import { GalaxyData } from './KpiaUniverse';
 
 interface CosmicFogProps {
     galaxies: GalaxyData[];
+    mode?: 'universe' | 'galaxy';
+    accentColor?: string;
 }
 
 const vertexShader = `
@@ -33,6 +35,9 @@ uniform float uTime;
 uniform vec3 uGalaxyPositions[10]; // Max 10 galaxies
 uniform int uGalaxyCount;
 uniform float uDensityFalloff;
+
+// Dynamic Color
+uniform vec3 uAccentColor;
 
 // -------------------------------------------------------------------------
 // 3D Simplex Noise
@@ -155,14 +160,15 @@ void main() {
 
     // Color mixing
     vec3 baseColor = vec3(0.1, 0.05, 0.3);
-    vec3 highlightColor = vec3(0.3, 0.6, 0.8);
-    vec3 finalColor = mix(baseColor, highlightColor, n * n);
+    // Use uAccentColor instead of hardcoded highlight
+    // vec3 highlightColor = vec3(0.3, 0.6, 0.8);
+    vec3 finalColor = mix(baseColor, uAccentColor, n * n);
 
     gl_FragColor = vec4(finalColor, alpha * 0.4); // Reduce overall opacity slightly for balance
 }
 `;
 
-export function CosmicFog({ galaxies }: CosmicFogProps) {
+export function CosmicFog({ galaxies, mode, accentColor = '#4d99cc' }: CosmicFogProps) {
     const meshRef = useRef<THREE.Mesh>(null);
 
     // Prepare Uniforms
@@ -173,6 +179,7 @@ export function CosmicFog({ galaxies }: CosmicFogProps) {
                 uGalaxyPositions: { value: new Array(10).fill(new THREE.Vector3(0, 0, 0)) },
                 uGalaxyCount: { value: 0 },
                 uDensityFalloff: { value: 25.0 }, // Radius of the fog cluster around galaxies
+                uAccentColor: { value: new THREE.Color(accentColor) }
             },
             vertexShader,
             fragmentShader,
@@ -199,6 +206,14 @@ export function CosmicFog({ galaxies }: CosmicFogProps) {
             material.uniforms.uGalaxyCount.value = galaxies.length;
         }
     }, [galaxies]);
+
+    // Update Accent Color when props change
+    useEffect(() => {
+        if (meshRef.current) {
+            const material = meshRef.current.material as THREE.ShaderMaterial;
+            material.uniforms.uAccentColor.value.set(accentColor);
+        }
+    }, [accentColor]);
 
     useFrame((state) => {
         if (meshRef.current) {
