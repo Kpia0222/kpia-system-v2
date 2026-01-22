@@ -5,9 +5,10 @@ import { useState, useEffect } from "react";
 
 interface StartScreenProps {
     onStartSystem: () => void;
+    isTransitioning?: boolean;
 }
 
-export function StartScreen({ onStartSystem }: StartScreenProps) {
+export function StartScreen({ onStartSystem, isTransitioning = false }: StartScreenProps) {
     const [isHovered, setIsHovered] = useState(false);
     const [displayText, setDisplayText] = useState("");
     const fullText = "ORGANIC HYPER AETHER";
@@ -27,10 +28,14 @@ export function StartScreen({ onStartSystem }: StartScreenProps) {
     }, []);
 
     return (
-        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black pointer-events-auto select-none overflow-hidden">
+        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center pointer-events-auto select-none overflow-hidden">
 
-            {/* Decorative Lines & Squares */}
-            <div className="absolute inset-0 pointer-events-none opacity-20">
+            {/* Decorative Lines & Squares - Glows during transition */}
+            <motion.div
+                className="absolute inset-0 pointer-events-none"
+                animate={{ opacity: isTransitioning ? 0.9 : 0.2 }}
+                transition={{ duration: 0.5 }}
+            >
                 {/* Thin Lines */}
                 <div className="absolute top-[20%] left-0 w-full h-[1px] bg-white/10" />
                 <div className="absolute top-[80%] left-0 w-full h-[1px] bg-white/10" />
@@ -60,7 +65,7 @@ export function StartScreen({ onStartSystem }: StartScreenProps) {
                 <div className="absolute top-[80%] right-[15%] w-1 h-1 bg-white" />
                 <div className="absolute top-[40%] right-[10%] w-[2px] h-[2px] bg-[#ff8800]" />
                 <div className="absolute bottom-[30%] left-[10%] w-[2px] h-[2px] bg-[#ff8800]" />
-            </div>
+            </motion.div>
 
             {/* Main Title - Typewriter Effect */}
             <div className="z-10 text-center mb-20 min-h-[100px] flex flex-col items-center justify-center">
@@ -101,6 +106,6 @@ export function StartScreen({ onStartSystem }: StartScreenProps) {
             <div className="absolute bottom-10 text-xs text-white/30 font-mono tracking-widest">
                 KPIA SYSTEM INITIALIZED
             </div>
-        </div>
+        </div >
     );
 }

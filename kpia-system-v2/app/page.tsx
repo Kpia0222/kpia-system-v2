@@ -1,17 +1,17 @@
 "use client";
 
-
 import { Suspense, useRef, useState, useEffect } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Sparkles, Environment, CameraControls } from "@react-three/drei";
 import { EffectComposer, Bloom, Noise } from "@react-three/postprocessing";
+import { ScanlineOverlay } from "@/components/ui/ScanlineOverlay";
 import * as THREE from "three";
 
 // 新しい世界観コンポーネント (v3)
 import { KpiaUniverse, GalaxyData, galaxies } from "@/components/three/KpiaUniverse";
 import { GalaxyInterior } from "@/components/three/GalaxyInterior";
-import { MyGalaxyScene } from "@/components/three/MyGalaxyScene"; // DNA Scene
-import { CosmicFog } from "@/components/three/CosmicFog";
+import { MyGalaxyScene } from "../components/three/MyGalaxyScene"; // DNA Scene
+
 import { GameMenuHUD } from "@/components/ui/GameMenuHUD";
 import { ErosionGauge } from "@/components/ui/ErosionGauge";
 import { AnimatePresence } from "framer-motion";
@@ -22,6 +22,15 @@ import { StatusMenu } from "@/components/ui/StatusMenu";
 import { NotionMenu } from "@/components/ui/NotionMenu";
 import { MapMenu } from "@/components/ui/MapMenu";
 import { StartScreen } from "@/components/ui/StartScreen"; // Start Screen
+import { TransitionOverlay } from "../components/three/TransitionOverlay";
+import { StartScreenDecorations } from "@/components/three/StartScreenDecorations";
+import { KuiperBelt } from "@/components/three/KuiperBelt";
+
+
+// Camera Constants
+const CAM_POS_DEFAULT = { x: 0, y: 200, z: 400 };
+const CAM_POS_ZOOM = { x: 0, y: 0, z: 200 }; // Adjusted to match minDistance
+const CAM_POS_START = { x: 0, y: 0, z: 200 }; // Initial Start Screen View
 
 // Helper to track camera position for Map
 const CameraTracker = ({ onUpdate, isActive }: { onUpdate: (pos: { x: number, z: number }) => void, isActive: boolean }) => {
@@ -29,6 +38,39 @@ const CameraTracker = ({ onUpdate, isActive }: { onUpdate: (pos: { x: number, z:
     if (!isActive) return;
     onUpdate({ x: camera.position.x, z: camera.position.z });
   });
+  return null;
+};
+
+const InitialDiveController = ({ controls, onComplete }: { controls: React.RefObject<CameraControls>, onComplete: () => void }) => {
+  useEffect(() => {
+    const attemptDive = () => {
+      if (controls.current) {
+        // 1. Instant Jump to Far away
+        controls.current.setLookAt(0, 0, 1500, 0, 0, 0, false);
+
+        // 2. Smooth Zoom to Start Position
+        setTimeout(() => {
+          controls.current?.setLookAt(
+            CAM_POS_START.x, CAM_POS_START.y, CAM_POS_START.z,
+            0, 0, 0,
+            true
+          );
+        }, 100);
+
+        // 3. Signal Completion
+        setTimeout(onComplete, 2500);
+        return true;
+      }
+      return false;
+    };
+
+    if (!attemptDive()) {
+      const interval = setInterval(() => {
+        if (attemptDive()) clearInterval(interval);
+      }, 100);
+      return () => clearInterval(interval);
+    }
+  }, []);
   return null;
 };
 
@@ -50,7 +92,45 @@ export default function Home() {
   const controlsRef = useRef<CameraControls>(null!);         // For Galaxy Interior
   const universeControlsRef = useRef<CameraControls>(null!); // For Universe View
 
+
   // Scene Toggle Logic with Transition
+  const [isDiving, setIsDiving] = useState(false); // For Start Screen Dive
+  const [isAwakening, setIsAwakening] = useState(false); // For System Start Zoom-out
+  const [isStartupTransition, setIsStartupTransition] = useState(false); // For Cinematic Overlay
+  const [isInitialDive, setIsInitialDive] = useState(true); // For Page Load Dive
+
+  // Initial Dive Logic moved to InitialDiveController component
+  // to ensure CameraControls is mounted and ready.
+
+  const handleStartScreenDive = () => {
+    // 1. Trigger fast rotation in MyGalaxyScene (via isDiving prop)
+    setIsDiving(true);
+    setIsMenuOpen(false);
+
+    // 2. Camera Dive via Controls
+    // Ensure we are controlling the right camera (controlsRef for MyGalaxy)
+    // Note: currentScene is likely 'my_galaxy' or 'universe' here.
+    if (currentScene === 'my_galaxy' && controlsRef.current) {
+      controlsRef.current.setLookAt(
+        CAM_POS_START.x, CAM_POS_START.y, CAM_POS_START.z,
+        0, 0, 0,
+        true // transition
+      );
+    }
+
+    // 3. Wait for dive, then switch
+    setTimeout(() => {
+      setCurrentScene('start');
+      setIsDiving(false);
+      // Reset camera for next time (optional, handled by Awakening)
+    }, 1500);
+  };
+
+  const handleSystemStart = () => {
+    // Cinematic Transition Trigger
+    setIsStartupTransition(true);
+  };
+
   const handleSceneToggle = () => {
     if (currentScene === 'start' || isSceneSwitching) return;
 
@@ -66,7 +146,6 @@ export default function Home() {
     }, 800);
   };
 
-  // Keyboard Interaction
   // Keyboard Interaction
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -179,7 +258,7 @@ export default function Home() {
     <main className="h-screen w-full bg-black relative">
       <AnimatePresence>
         {currentScene === 'start' && (
-          <StartScreen onStartSystem={() => setCurrentScene('my_galaxy')} />
+          <StartScreen onStartSystem={handleSystemStart} />
         )}
       </AnimatePresence>
 
@@ -197,13 +276,42 @@ export default function Home() {
         )}
       </AnimatePresence>
 
+      <TransitionOverlay
+        active={isStartupTransition}
+        onMidpoint={() => {
+          setCurrentScene('my_galaxy');
+          setIsAwakening(true);
+
+          // Start awakening zoom-out
+          if (controlsRef.current) {
+            controlsRef.current.setLookAt(
+              CAM_POS_ZOOM.x, CAM_POS_ZOOM.y, CAM_POS_ZOOM.z * 1.5, // Start slightly further than limit
+              0, 0, 0,
+              false
+            );
+
+            // Animate to default position
+            setTimeout(() => {
+              controlsRef.current?.setLookAt(
+                CAM_POS_DEFAULT.x, CAM_POS_DEFAULT.y, CAM_POS_DEFAULT.z,
+                0, 0, 0,
+                true
+              );
+            }, 100);
+
+            // End awakening state
+            setTimeout(() => {
+              setIsAwakening(false);
+            }, 3000);
+          }
+        }}
+        onComplete={() => setIsStartupTransition(false)}
+      />
+
       <UniversalMenu
         isOpen={isMenuOpen}
         onClose={() => setIsMenuOpen(false)}
-        onStartScreen={() => {
-          setIsMenuOpen(false);
-          setCurrentScene('start');
-        }}
+        onStartScreen={handleStartScreenDive}
       />
       <StatusMenu isOpen={isStatusOpen} onClose={() => setIsStatusOpen(false)} />
       <NotionMenu isOpen={isNotionOpen} onClose={() => setIsNotionOpen(false)} />
@@ -253,15 +361,47 @@ export default function Home() {
       {/* Canvas Scene */}
       <Canvas shadows camera={{ position: [0, 200, 400], fov: 60, far: 3000 }}>
         {/* Common Env */}
-        <fog attach="fog" args={['#000', 500, 2500]} />
         <ambientLight intensity={0.5} />
         <Environment preset="city" />
+
+        {/* Scene: Start Screen (Decorative DNA) */}
+        {currentScene === 'start' && (
+          <>
+            <CameraControls
+              ref={controlsRef}
+              makeDefault
+              minDistance={10} // Allow range for dive
+              maxDistance={2000}
+              smoothTime={1.5}
+              // Disable user interaction
+              enabled={false}
+            />
+            <group position={[-150, 0, 0]} rotation={[0, 0, Math.PI / 8]}>
+              <MyGalaxyScene controlsRef={controlsRef} mode="decorative" isDiving={isInitialDive} />
+              <Sparkles count={200} scale={400} size={2} speed={0.4} opacity={0.3} color="#ff8800" />
+            </group>
+            <StartScreenDecorations isTransitioning={isStartupTransition} />
+            {isInitialDive && (
+              <InitialDiveController
+                controls={controlsRef}
+                onComplete={() => setIsInitialDive(false)}
+              />
+            )}
+          </>
+        )}
 
         {/* Scene: My Galaxy (DNA) */}
         {currentScene === 'my_galaxy' && (
           <>
-            <CameraControls makeDefault minDistance={100} maxDistance={1000} />
-            <MyGalaxyScene />
+            <CameraControls
+              ref={controlsRef}
+              makeDefault
+              minDistance={100}
+              maxDistance={1000}
+              smoothTime={isDiving ? 0.3 : 1.5} // Fast for dive, Slow for awakening/normal
+            />
+            <MyGalaxyScene controlsRef={controlsRef} isDiving={isDiving} />
+            <KuiperBelt />
             <Sparkles count={500} scale={800} size={2} speed={0.2} opacity={0.5} color="#ff8800" />
           </>
         )}
@@ -270,16 +410,6 @@ export default function Home() {
         {currentScene === 'universe' && (
           <>
             <CameraTracker onUpdate={setCameraPos} isActive={isMapOpen} />
-
-            <CosmicFog
-              galaxies={galaxies}
-              mode={viewMode}
-              accentColor={
-                viewMode === 'galaxy' && selectedGalaxy
-                  ? (selectedGalaxy.id === 'g-africa' ? '#ffaa00' : selectedGalaxy.id === 'g-irish' ? '#00ff88' : selectedGalaxy.id === 'g-spiral' ? '#0088ff' : '#ffffff')
-                  : '#ffffff'
-              }
-            />
 
             <Sparkles
               count={viewMode === 'universe' ? 5000 : 2000}
@@ -328,7 +458,7 @@ export default function Home() {
 
         <EffectComposer>
           <Bloom luminanceThreshold={0.5} luminanceSmoothing={0.9} intensity={2.0} />
-          <Noise opacity={0.05} />
+          <Noise opacity={0.02} />
         </EffectComposer>
       </Canvas>
 
@@ -367,7 +497,7 @@ export default function Home() {
       {currentScene !== 'start' && (
         <>
           <div className="absolute bottom-2 right-2 font-mono text-right pointer-events-none" style={{ color: "#FFFFFF" }}>
-            <div className="text-[10px] tracking-[0.5em] mb-2">KPIA_SYSTEM v3.3.0 [LIQUID_METAL]</div>
+            <div className="text-[10px] tracking-[0.5em] mb-2">KPIA_SYSTEM v4.5.0 [MY_GALAXY]</div>
           </div>
           <div className="absolute bottom-4 left-4 font-mono text-right pointer-events-none" style={{ color: "#FFFFFF" }}>
             <div className="text-[12px] tracking-widest">
@@ -376,6 +506,7 @@ export default function Home() {
           </div>
         </>
       )}
+      <ScanlineOverlay />
     </main>
   );
 }
