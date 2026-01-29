@@ -7,6 +7,8 @@ export const useAutoSave = () => {
         viewMode,
         isDnaMode,
         selectedGalaxyId,
+        erosionLevel,
+        kardashevScale,
         saveCurrentState,
         user
     } = useStore();
@@ -31,5 +33,5 @@ export const useAutoSave = () => {
                 clearTimeout(timeoutRef.current);
             }
         };
-    }, [currentScene, viewMode, isDnaMode, selectedGalaxyId, saveCurrentState, user]);
+    }, [currentScene, viewMode, isDnaMode, selectedGalaxyId, erosionLevel, kardashevScale, saveCurrentState, user]);
 };

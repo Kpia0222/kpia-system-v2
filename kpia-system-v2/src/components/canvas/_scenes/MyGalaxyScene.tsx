@@ -5,6 +5,7 @@ import { CameraControls } from "@react-three/drei";
 import { DnaModel } from "@/components/canvas/objects/DnaModel";
 import { MeteorEnvironment } from "@/components/canvas/environments/MeteorEnvironment";
 import { METEOR_DEFAULTS } from "@/config/environment-settings";
+import { MusicFragments } from "@/components/canvas/objects/MusicFragments";
 
 // ============================================================================
 // Scene Props
@@ -35,6 +36,9 @@ export function MyGalaxyScene({
                 isHovered={isHovered}
                 onHoverChange={setIsHovered}
             />
+
+            {/* Music Fragments (Drafts) */}
+            <MusicFragments />
 
             {/* Meteor Environment (Kuiper Belt Ring) */}
             <MeteorEnvironment

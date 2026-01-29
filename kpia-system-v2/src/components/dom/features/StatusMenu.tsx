@@ -6,9 +6,17 @@ import { useStore } from "@/store/useStore";
 
 // StatusMenu now uses Zustand directly - no props required
 export function StatusMenu() {
-    const { isStatusOpen, closeMenu } = useStore();
+    const {
+        isStatusOpen,
+        closeMenu,
+        erosionLevel,
+        kardashevScale,
+        setErosionLevel,
+        setKardashevScale,
+        musicTracks
+    } = useStore();
 
-    // ESC key to close
+    // ESC key to close & Data Refresh
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (isStatusOpen && e.key === "Escape") {
@@ -16,6 +24,12 @@ export function StatusMenu() {
             }
         };
         window.addEventListener("keydown", handleKeyDown);
+
+        // Refresh data when menu opens
+        if (isStatusOpen) {
+            useStore.getState().fetchMusicTracks();
+        }
+
         return () => window.removeEventListener("keydown", handleKeyDown);
     }, [isStatusOpen, closeMenu]);
 
@@ -71,9 +85,21 @@ export function StatusMenu() {
                             <div className="flex justify-between items-end mb-2">
                                 <h3 className="text-[#ff8800] font-mono text-sm tracking-widest">KARDASHEV SCALE</h3>
                                 <div className="font-mono text-2xl font-bold text-white">
-                                    <span className="text-[#ff8800]">TYPE</span> 1.24 <span className="text-white/30 text-sm">/ 3.00</span>
+                                    <span className="text-[#ff8800]">TYPE</span> {kardashevScale.toFixed(2)} <span className="text-white/30 text-sm">/ 3.00</span>
                                 </div>
                             </div>
+
+                            {/* Simulator Control */}
+                            <div className="mb-2">
+                                <input
+                                    type="range"
+                                    min="0" max="3" step="0.01"
+                                    value={kardashevScale}
+                                    onChange={(e) => setKardashevScale(parseFloat(e.target.value))}
+                                    className="w-full h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-[#ff8800]"
+                                />
+                            </div>
+
                             <div className="relative w-full h-4 bg-white/10 rounded-full overflow-hidden">
                                 <div className="absolute inset-0 grid grid-cols-[repeat(30,1fr)] gap-0.5">
                                     {Array.from({ length: 30 }).map((_, i) => (
@@ -82,8 +108,8 @@ export function StatusMenu() {
                                 </div>
                                 <motion.div
                                     initial={{ width: 0 }}
-                                    animate={{ width: "41.3%" }} // 1.24 / 3.00 is roughly 41.3%
-                                    transition={{ duration: 1.5, ease: "easeOut" }}
+                                    animate={{ width: `${(kardashevScale / 3) * 100}%` }}
+                                    transition={{ duration: 0.2, ease: "easeOut" }}
                                     className="h-full bg-gradient-to-r from-[#ff8800]/50 to-[#ff8800]"
                                 />
                             </div>
@@ -102,6 +128,17 @@ export function StatusMenu() {
                             <div className="border border-white/10 bg-white/5 p-6 flex flex-col items-center justify-center relative overflow-hidden group hover:border-[#ff8800]/50 transition-colors">
                                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,136,0,0.1)_0%,transparent_70%)] opacity-0 group-hover:opacity-100 transition-opacity" />
                                 <h3 className="text-white/60 font-mono text-xs tracking-widest mb-4 z-10">EROSION</h3>
+
+                                <div className="w-full mb-4 px-4 z-20">
+                                    <input
+                                        type="range"
+                                        min="0" max="1" step="0.01"
+                                        value={erosionLevel}
+                                        onChange={(e) => setErosionLevel(parseFloat(e.target.value))}
+                                        className="w-full h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-[#ff8800]"
+                                    />
+                                </div>
+
                                 <div className="relative z-10 w-32 h-32 flex items-center justify-center">
                                     <svg className="absolute inset-0 w-full h-full -rotate-90">
                                         <circle cx="64" cy="64" r="56" fill="none" stroke="#333" strokeWidth="4" />
@@ -110,13 +147,15 @@ export function StatusMenu() {
                                             fill="none" stroke="#ff8800" strokeWidth="4"
                                             strokeDasharray="351.8"
                                             strokeDashoffset="351.8"
-                                            animate={{ strokeDashoffset: 351.8 * (1 - 0.45) }}
-                                            transition={{ duration: 2, delay: 0.2 }}
+                                            animate={{ strokeDashoffset: 351.8 * (1 - erosionLevel) }}
+                                            transition={{ duration: 0.2 }}
                                         />
                                     </svg>
-                                    <div className="text-3xl font-mono font-bold text-white">45<span className="text-sm text-[#ff8800]">%</span></div>
+                                    <div className="text-3xl font-mono font-bold text-white">{(erosionLevel * 100).toFixed(0)}<span className="text-sm text-[#ff8800]">%</span></div>
                                 </div>
-                                <div className="mt-4 text-[10px] font-mono text-[#ff8800] animate-pulse">WARNING: UNSTABLE</div>
+                                <div className={`mt-4 text-[10px] font-mono ${erosionLevel > 0.8 ? 'text-[#ff8800] animate-pulse' : 'text-white/40'}`}>
+                                    {erosionLevel > 0.8 ? 'WARNING: UNSTABLE' : 'STABLE'}
+                                </div>
                             </div>
 
                             {/* Metric 2: Capacity */}
@@ -151,6 +190,45 @@ export function StatusMenu() {
                                 </div>
                             </div>
 
+                        </div>
+
+                        {/* SYSTEM LOG / DATA STREAM */}
+                        <div className="mt-4 border border-white/10 bg-black/40 p-4 h-48 overflow-hidden relative group">
+                            <h3 className="text-[#ff8800] font-mono text-sm tracking-widest mb-2 flex justify-between">
+                                <span>SYSTEM LOG / DATA STREAM</span>
+                                <span className="text-white/30 text-[10px] animate-pulse">LIVE RECEPTION</span>
+                            </h3>
+                            <div className="absolute top-10 left-4 right-4 h-[1px] bg-[#ff8800]/20" />
+
+                            <div className="h-full overflow-y-auto pr-2 pb-8 scrollbar-thin scrollbar-thumb-[#ff8800]/20 hover:scrollbar-thumb-[#ff8800]/50">
+                                <AnimatePresence mode="popLayout">
+                                    {musicTracks.length === 0 ? (
+                                        <div className="font-mono text-xs text-white/30 italic pt-2">
+                                            NO DATA STREAMS DETECTED...
+                                        </div>
+                                    ) : (
+                                        musicTracks.map((track) => (
+                                            <motion.div
+                                                key={track.id}
+                                                initial={{ opacity: 0, x: -20 }}
+                                                animate={{ opacity: 1, x: 0 }}
+                                                exit={{ opacity: 0 }}
+                                                transition={{ duration: 0.3 }}
+                                                className={`flex items-center gap-4 py-1.5 border-b border-white/5 font-mono text-xs transition-colors ${track.external_url ? 'hover:bg-white/10 cursor-pointer group/item' : 'hover:bg-white/5'}`}
+                                                onClick={() => track.external_url && window.open(track.external_url, '_blank')}
+                                            >
+                                                <span className={`min-w-[80px] ${track.status === 'draft' || track.status === 'fragment' ? 'text-[#00ffff]' : 'text-[#00ff00]'}`}>
+                                                    [{track.status === 'draft' || track.status === 'fragment' ? 'FRAGMENT' : 'SUCCESS'}]
+                                                </span>
+                                                <span className="text-white/80 flex-1 truncate group-hover/item:text-[#ff8800] transition-colors">
+                                                    {track.title} {track.external_url && '↗'}
+                                                </span>
+                                                <span className="text-white/30 text-[10px]">{new Date(track.created_at).toLocaleDateString()}</span>
+                                            </motion.div>
+                                        ))
+                                    )}
+                                </AnimatePresence>
+                            </div>
                         </div>
 
                         {/* Footer Info */}

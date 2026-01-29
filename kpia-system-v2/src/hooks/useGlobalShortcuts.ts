@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useStore } from "@/store/useStore";
 import { galaxies } from "@/config/galaxy-data";
+import { SHORTCUTS } from "@/config/shortcuts";
 
 /**
  * グローバルキーボードショートカットを管理するカスタムフック
@@ -41,10 +42,34 @@ export function useGlobalShortcuts() {
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
+            // Input focus check: disable shortcuts if typing
+            const activeElement = document.activeElement;
+            const isInputActive = activeElement && (
+                activeElement.tagName === 'INPUT' ||
+                activeElement.tagName === 'TEXTAREA' ||
+                (activeElement as HTMLElement).isContentEditable
+            );
+
+            // Allow Escape to potentially blur input (default behavior) or close menus if handled
+            // If input is active, we generally ignore app shortcuts except maybe Escape logic if desired.
+            if (isInputActive && e.key !== 'Escape') return;
+
             const anyMenuOpen = isMenuOpen || isMapOpen || isStatusOpen || isNotionOpen;
 
+            // Helper to check key match
+            const isKey = (keys: readonly string[]) => keys.includes(e.key);
+
             // === Escape key handling ===
-            if (e.key === 'Escape') {
+            if (isKey(SHORTCUTS.SYSTEM.ESCAPE)) {
+
+                // If input is active, let default behavior happen (blur) and close menus if needed?
+                // For now, if input is active, we treat Escape as "Blur" mostly. 
+                // But request says "invalidate shortcuts". We proceed only if logic demands.
+                if (isInputActive) {
+                    (activeElement as HTMLElement).blur();
+                    return;
+                }
+
                 // Priority 1: Close any open menu
                 if (anyMenuOpen) {
                     e.preventDefault();
@@ -73,15 +98,17 @@ export function useGlobalShortcuts() {
                 return;
             }
 
+            // If input was active, we returned above (except Escape).
+
             // === U key: Toggle universal menu ===
-            if (e.key.toUpperCase() === 'U') {
+            if (isKey(SHORTCUTS.MENU.TOGGLE)) {
                 e.preventDefault();
                 toggleMenu('menu');
                 return;
             }
 
             // === F2: Toggle mute ===
-            if (e.key === 'F2') {
+            if (isKey(SHORTCUTS.SYSTEM.MUTE)) {
                 e.preventDefault();
                 toggleMute();
                 return;
@@ -91,35 +118,35 @@ export function useGlobalShortcuts() {
             if (currentScene === 'start') return;
 
             // === Home key: Return to start ===
-            if (e.key === 'Home' && !isLoading) {
+            if (isKey(SHORTCUTS.SCENE.RETURN_START) && !isLoading) {
                 e.preventDefault();
                 returnToStart();
                 return;
             }
 
             // === F1: Toggle scene mode ===
-            if (e.key === 'F1' && !anyMenuOpen) {
+            if (isKey(SHORTCUTS.SCENE.TOGGLE_MODE) && !anyMenuOpen) {
                 e.preventDefault();
                 toggleSceneMode();
                 return;
             }
 
             // === F3: Notion menu ===
-            if (e.key === 'F3' && !anyMenuOpen) {
+            if (isKey(SHORTCUTS.NOTION.TOGGLE) && !anyMenuOpen) {
                 e.preventDefault();
                 toggleMenu('notion');
                 return;
             }
 
-            // === F4: Status menu ===
-            if (e.key === 'F4' && !anyMenuOpen) {
+            // === F4 / S: Status menu ===
+            if (isKey(SHORTCUTS.STATUS.TOGGLE) && !anyMenuOpen) {
                 e.preventDefault();
                 toggleMenu('status');
                 return;
             }
 
-            // === F5: Map menu ===
-            if (e.key === 'F5' && !anyMenuOpen) {
+            // === F5 / M: Map menu ===
+            if (isKey(SHORTCUTS.MAP.TOGGLE) && !anyMenuOpen) {
                 e.preventDefault();
                 toggleMenu('map');
                 return;
@@ -129,7 +156,7 @@ export function useGlobalShortcuts() {
             if (anyMenuOpen || isTransitioning || isLoading) return;
 
             // === Enter: Select/Enter galaxy ===
-            if (e.key === 'Enter') {
+            if (isKey(SHORTCUTS.NAVIGATION.ENTER)) {
                 if (hoveredGalaxyId && !selectedGalaxyId && !isTransitioning) {
                     e.preventDefault();
                     setSelectedGalaxy(hoveredGalaxyId);
@@ -141,16 +168,18 @@ export function useGlobalShortcuts() {
             }
 
             // === Arrow keys: Navigate galaxies ===
-            if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+            if (isKey(SHORTCUTS.NAVIGATION.NEXT) || isKey(SHORTCUTS.NAVIGATION.PREV)) {
                 if (isTransitioning || viewMode === 'galaxy') return;
 
-                e.preventDefault();
+                // Stop default scroll for arrows
+                if (e.key.startsWith('Arrow')) e.preventDefault();
+
                 const currentId = selectedGalaxyId || hoveredGalaxyId;
                 let currentIndex = galaxies.findIndex(g => g.id === currentId);
                 if (currentIndex === -1) currentIndex = -1;
 
                 let nextIndex: number;
-                if (e.key === 'ArrowRight') {
+                if (isKey(SHORTCUTS.NAVIGATION.NEXT)) {
                     nextIndex = (currentIndex + 1) % galaxies.length;
                 } else {
                     nextIndex = (currentIndex - 1 + galaxies.length) % galaxies.length;

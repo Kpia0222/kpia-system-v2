@@ -188,7 +188,7 @@ export default function Home() {
     <main className="h-screen w-full bg-black relative">
       {/* ===== UI OVERLAYS ===== */}
       <AnimatePresence>
-        {currentScene === 'start' && <StartScreen onStartSystem={startSystem} />}
+        {currentScene === 'start' && <StartScreen onStartSystem={startSystem} isTransitioning={isStartupTransition} />}
       </AnimatePresence>
 
       <TransitionOverlay active={isStartupTransition} duration={TRANSITION_DURATIONS.sceneTransition} />

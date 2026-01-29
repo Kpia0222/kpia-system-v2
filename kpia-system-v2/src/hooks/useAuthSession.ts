@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useStore } from "@/store/useStore";
 
 export function useAuthSession() {
-    const { setSession, setUser, syncProfile } = useStore();
+    const { setSession, setUser, syncProfile, fetchMusicTracks } = useStore();
 
     useEffect(() => {
         const supabase = createClient();
@@ -14,6 +14,7 @@ export function useAuthSession() {
             setUser(session?.user ?? null);
             if (session?.user) {
                 syncProfile();
+                fetchMusicTracks();
             }
         });
 

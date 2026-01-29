@@ -8,6 +8,14 @@ export type SceneType = 'start' | 'universe' | 'my_galaxy'
 export type ViewMode = 'universe' | 'galaxy'
 export type DurationKeys = keyof typeof DURATIONS
 
+export interface MusicTrack {
+    id: string
+    title: string
+    external_url?: string
+    status: 'draft' | 'published' | 'archived' | 'fragment'
+    created_at: string
+}
+
 interface AppState {
     // シーン状態
     currentScene: SceneType
@@ -37,6 +45,15 @@ interface AppState {
     isAuthOpen: boolean
     isMuted: boolean
 
+    // ステータス・シミュレーション
+    erosionLevel: number
+    kardashevScale: number
+    lastPosition: {
+        scene: SceneType
+        galaxyId: string | null
+        viewMode: ViewMode
+    } | null
+
     // 認証・永続化状態
     user: User | null
     session: Session | null
@@ -45,10 +62,20 @@ interface AppState {
     setCurrentScene: (scene: SceneType) => void
     setUser: (user: User | null) => void
     setSession: (session: Session | null) => void
+    resetState: () => void
     syncWithCloud: () => Promise<void>
     loadFromCloud: () => Promise<void>
     syncProfile: () => Promise<void>
     saveCurrentState: () => Promise<void>
+
+    // Status Setters
+    setErosionLevel: (level: number) => void
+    setKardashevScale: (scale: number) => void
+
+    // Music Data
+    musicTracks: MusicTrack[]
+    fetchMusicTracks: () => Promise<void>
+
     setViewMode: (mode: ViewMode) => void
     toggleDnaMode: () => void
     setDnaMode: (value: boolean) => void
@@ -110,6 +137,11 @@ export const useStore = create<AppState>((set, get) => ({
     isAuthOpen: false,
     isMuted: false,
 
+    erosionLevel: 0.0,
+    kardashevScale: 1.24,
+    lastPosition: null,
+    musicTracks: [],
+
     // 基本アクション
     setCurrentScene: (scene) => set({ currentScene: scene }),
     setViewMode: (mode) => set({ viewMode: mode }),
@@ -123,6 +155,10 @@ export const useStore = create<AppState>((set, get) => ({
     setInitialDive: (value) => set({ isInitialDive: value }),
     setHoveredGalaxy: (id) => set({ hoveredGalaxyId: id }),
     setSelectedGalaxy: (id) => set({ selectedGalaxyId: id }),
+
+    // Status Setters
+    setErosionLevel: (level) => set({ erosionLevel: level }),
+    setKardashevScale: (scale) => set({ kardashevScale: scale }),
 
     openMenu: (menu) => {
         const key = menu === 'menu' ? 'isMenuOpen' :
@@ -258,6 +294,23 @@ export const useStore = create<AppState>((set, get) => ({
     setUser: (user) => set({ user }),
     setSession: (session) => set({ session }),
 
+    resetState: () => {
+        set({
+            currentScene: 'start',
+            viewMode: 'universe',
+            isDnaMode: false,
+            selectedGalaxyId: null,
+            erosionLevel: 0.0,
+            kardashevScale: 1.24,
+            lastPosition: null,
+            isMenuOpen: false,
+            isStatusOpen: false,
+            isNotionOpen: false,
+            isMapOpen: false,
+            isAuthOpen: false,
+        });
+    },
+
     syncProfile: async () => {
         const state = get();
         if (!state.user) return;
@@ -273,15 +326,16 @@ export const useStore = create<AppState>((set, get) => ({
             if (error && error.code !== 'PGRST116') throw error;
 
             if (data?.game_state) {
-                const gameState = data.game_state as Partial<AppState>;
+                const gameState = data.game_state as any;
                 console.log('Restoring game state:', gameState);
 
                 set({
-                    currentScene: gameState.currentScene ?? 'start',
-                    viewMode: gameState.viewMode ?? 'universe',
-                    isDnaMode: gameState.isDnaMode ?? false,
-                    selectedGalaxyId: gameState.selectedGalaxyId ?? null,
-                    // 必要に応じて他のステートも復元
+                    // Restore only persistent fields
+                    erosionLevel: gameState.erosionLevel ?? 0.0,
+                    kardashevScale: gameState.kardashevScale ?? 1.24,
+                    lastPosition: gameState.lastPosition ?? null,
+                    // If resuming directly, we might want to set these, but usually we wait for "START" action
+                    // For now just load into memory, and let StartScreen logic handle the jump
                 });
             }
         } catch (error: any) {
@@ -293,11 +347,18 @@ export const useStore = create<AppState>((set, get) => ({
         const state = get();
         if (!state.user) return;
 
+        // Construct lastPosition based on current state
+        const lastPosition = {
+            scene: state.currentScene,
+            galaxyId: state.selectedGalaxyId,
+            viewMode: state.viewMode
+        };
+
         const gameState = {
-            currentScene: state.currentScene,
-            viewMode: state.viewMode,
-            isDnaMode: state.isDnaMode,
-            selectedGalaxyId: state.selectedGalaxyId,
+            erosionLevel: state.erosionLevel,
+            kardashevScale: state.kardashevScale,
+            lastPosition: lastPosition,
+            updatedAt: new Date().toISOString()
         };
 
         const supabase = createClient();
@@ -313,18 +374,43 @@ export const useStore = create<AppState>((set, get) => ({
             if (error) throw error;
             console.log('Game state saved:', gameState);
         } catch (error) {
-            console.error('Failed to save state:', error);
+            const e = error as any;
+            console.error('Failed to save state [FULL DUMP]:', JSON.stringify(e, null, 2));
+            console.error('Failed to save state [DIRECT]:', e);
+            console.error('Error Code:', e?.code || 'NO_CODE');
+            console.error('Error Message:', e?.message || 'NO_MESSAGE');
         }
     },
 
     syncWithCloud: async () => {
-        // Deprecated in favor of syncProfile / saveCurrentState separation
-        // Keeping as alias or removing if not used elsewhere
         await get().saveCurrentState();
     },
 
     loadFromCloud: async () => {
         await get().syncProfile();
+    },
+
+    fetchMusicTracks: async () => {
+        const state = get();
+        if (!state.user) return;
+
+        const supabase = createClient();
+        try {
+            const { data, error } = await supabase
+                .from('music_metadata')
+                .select('*')
+                .eq('user_id', state.user.id)
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+
+            if (data) {
+                console.log('Music tracks fetched:', data);
+                set({ musicTracks: data as MusicTrack[] });
+            }
+        } catch (error: any) {
+            console.error('Failed to fetch music tracks:', error.message || error);
+        }
     }
 }))
 
