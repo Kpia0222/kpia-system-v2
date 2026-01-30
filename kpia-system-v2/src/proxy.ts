@@ -1,11 +1,6 @@
 import { type NextRequest } from 'next/server'
-import { updateSession } from '@/lib/supabase/middleware'
+import { updateSession } from './lib/supabase/auth-helper'
 
-/**
- * Next.js Proxy (formerly Middleware)
- * Intercepts requests to refresh Supabase session.
- * Uses helper from @/lib/supabase/middleware
- */
 export async function proxy(request: NextRequest) {
     return await updateSession(request)
 }

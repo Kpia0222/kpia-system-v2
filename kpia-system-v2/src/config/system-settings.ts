@@ -42,9 +42,35 @@ export const VISUAL_SETTINGS = {
 } as const;
 
 /**
+ * 浮遊フラグメントの設定
+ */
+export const FLOATING_FRAGMENTS = {
+    speed: 1.5,
+    rotationIntensity: 0.5,
+    floatIntensity: 1,
+    colors: {
+        draft: '#ffaa00',       // ドラフト (オレンジ)
+        linked: '#ffd700',      // リンクあり (ゴールド)
+        emissive: {
+            draft: '#ff4400',
+            linked: '#ffaa00',
+        }
+    }
+} as const;
+
+/**
+ * システムログの設定
+ */
+export const SYSTEM_LOG_SETTINGS = {
+    typingSpeed: 0.05,          // 1行あたりの出現遅延 (秒)
+    maxEntries: 50,             // 最大表示数
+} as const;
+
+/**
  * 時計コンポーネントの設定
  */
 export const CLOCK_SETTINGS = {
+    // ...
     size: 48,                   // デフォルトサイズ (px)
     strokeWidth: {
         frame: 1,

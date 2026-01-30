@@ -3,6 +3,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect } from "react";
 import { useStore } from "@/store/useStore";
+import { SYSTEM_LOG_SETTINGS } from "@/config/system-settings";
 
 // StatusMenu now uses Zustand directly - no props required
 export function StatusMenu() {
@@ -200,30 +201,48 @@ export function StatusMenu() {
                             </h3>
                             <div className="absolute top-10 left-4 right-4 h-[1px] bg-[#ff8800]/20" />
 
-                            <div className="h-full overflow-y-auto pr-2 pb-8 scrollbar-thin scrollbar-thumb-[#ff8800]/20 hover:scrollbar-thumb-[#ff8800]/50">
+                            <div className="h-full overflow-y-auto pr-2 pb-8 scrollbar-thin scrollbar-thumb-[#ff8800]/20 hover:scrollbar-thumb-[#ff8800]/50 font-mono text-xs">
                                 <AnimatePresence mode="popLayout">
                                     {musicTracks.length === 0 ? (
-                                        <div className="font-mono text-xs text-white/30 italic pt-2">
+                                        <div className="text-white/30 italic pt-2">
                                             NO DATA STREAMS DETECTED...
                                         </div>
                                     ) : (
-                                        musicTracks.map((track) => (
+                                        musicTracks.slice(0, SYSTEM_LOG_SETTINGS.maxEntries).map((track, i) => (
                                             <motion.div
                                                 key={track.id}
-                                                initial={{ opacity: 0, x: -20 }}
+                                                initial={{ opacity: 0, x: -10 }}
                                                 animate={{ opacity: 1, x: 0 }}
                                                 exit={{ opacity: 0 }}
-                                                transition={{ duration: 0.3 }}
-                                                className={`flex items-center gap-4 py-1.5 border-b border-white/5 font-mono text-xs transition-colors ${track.external_url ? 'hover:bg-white/10 cursor-pointer group/item' : 'hover:bg-white/5'}`}
-                                                onClick={() => track.external_url && window.open(track.external_url, '_blank')}
+                                                transition={{ duration: 0.1, delay: i * SYSTEM_LOG_SETTINGS.typingSpeed }}
+                                                className={`py-1 border-b border-white/5 transition-colors flex items-center justify-between group/item hover:bg-white/5`}
                                             >
-                                                <span className={`min-w-[80px] ${track.status === 'draft' || track.status === 'fragment' ? 'text-[#00ffff]' : 'text-[#00ff00]'}`}>
-                                                    [{track.status === 'draft' || track.status === 'fragment' ? 'FRAGMENT' : 'SUCCESS'}]
-                                                </span>
-                                                <span className="text-white/80 flex-1 truncate group-hover/item:text-[#ff8800] transition-colors">
-                                                    {track.title} {track.external_url && '↗'}
-                                                </span>
-                                                <span className="text-white/30 text-[10px]">{new Date(track.created_at).toLocaleDateString()}</span>
+                                                <div className="flex items-center gap-2 truncate flex-1">
+                                                    <span className="text-white/30">[LOG]</span>
+                                                    <span className={`${track.external_url ? 'text-[#ff8800]' : 'text-white/60'}`}>
+                                                        FOUND: {track.title}
+                                                    </span>
+                                                </div>
+
+                                                <div className="flex items-center gap-2">
+                                                    <div className="text-[10px] opacity-50 whitespace-nowrap min-w-[50px] text-right">
+                                                        {track.status === 'published' ? '[READY]' : '[FRAG]'}
+                                                    </div>
+
+                                                    {/* Direct Link Button */}
+                                                    {track.external_url && (
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                window.open(track.external_url!, '_blank');
+                                                            }}
+                                                            className="flex items-center justify-center w-6 h-6 border border-[#ff8800]/30 rounded hover:bg-[#ff8800] hover:text-black transition-colors"
+                                                            title="JUMP TO SOURCE"
+                                                        >
+                                                            <span className="text-[10px]">↗</span>
+                                                        </button>
+                                                    )}
+                                                </div>
                                             </motion.div>
                                         ))
                                     )}

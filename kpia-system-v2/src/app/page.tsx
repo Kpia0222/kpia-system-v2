@@ -41,6 +41,7 @@ import { ScanlineEffect } from "@/components/dom/effects/ScanlineEffect";
 import AuthOverlay from "@/components/dom/features/auth/AuthOverlay";
 
 import { CyberButton } from "@/components/dom/shared/CyberButton";
+import { SystemIdentity } from "@/components/dom/shared/SystemIdentity";
 
 
 
@@ -146,7 +147,7 @@ export default function Home() {
     isInitialDive,
     isMapOpen,
     isAuthOpen,
-    isMenuOpen,
+
     closeMenu,
     hoveredGalaxyId,
     selectedGalaxyId,
@@ -157,9 +158,8 @@ export default function Home() {
     enterGalaxy,
     exitGalaxy,
     completeGalaxyEntry,
-    setSession,
-    setUser,
-    syncProfile,
+
+
   } = useStore();
 
   // === Hooks ===
@@ -226,6 +226,7 @@ export default function Home() {
       </AnimatePresence>
 
       {currentScene !== 'start' && !isTransitioning && <GameMenuHUD />}
+      {currentScene !== 'start' && !isTransitioning && <SystemIdentity />}
 
       {currentScene === 'universe' && !isTransitioning && viewMode === 'universe' && (
         <ErosionGauge
@@ -327,7 +328,7 @@ export default function Home() {
 
       {/* ===== KEYBOARD HINTS ===== */}
       {currentScene !== 'start' && (
-        <div className="absolute bottom-4 left-4 font-mono text-right pointer-events-none text-white text-[12px] tracking-widest">
+        <div className="absolute bottom-4 right-4 font-mono text-right pointer-events-none text-white text-[12px] tracking-widest">
           {KEYBOARD_HINTS.MENU} &nbsp;&nbsp; {KEYBOARD_HINTS.SELECT} &nbsp;&nbsp; {KEYBOARD_HINTS.ZOOM} &nbsp;&nbsp; {KEYBOARD_HINTS.BACK}
         </div>
       )}

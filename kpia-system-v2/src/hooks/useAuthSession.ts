@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useStore } from "@/store/useStore";
 
 export function useAuthSession() {
-    const { setSession, setUser, syncProfile, fetchMusicTracks } = useStore();
+    const { setSession, setUser, fetchUserProfile, fetchMusicTracks } = useStore();
 
     useEffect(() => {
         const supabase = createClient();
@@ -13,7 +13,7 @@ export function useAuthSession() {
             setSession(session);
             setUser(session?.user ?? null);
             if (session?.user) {
-                syncProfile();
+                fetchUserProfile();
                 fetchMusicTracks();
             }
         });
@@ -25,10 +25,12 @@ export function useAuthSession() {
             setSession(session);
             setUser(session?.user ?? null);
             if (session?.user) {
-                syncProfile();
+                fetchUserProfile();
+                // fetchMusicTracks is usually sufficient on initial load or manual refresh
+                // But could add here if needed for re-auth
             }
         });
 
         return () => subscription.unsubscribe();
-    }, [setSession, setUser, syncProfile]);
+    }, [setSession, setUser, fetchUserProfile, fetchMusicTracks]);
 }

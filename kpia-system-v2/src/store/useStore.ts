@@ -3,18 +3,11 @@ import { User, Session } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import { TRANSITION_DURATIONS as DURATIONS } from "@/config/system-settings";
 import { UI_STRINGS } from "@/config/ui-strings";
+import { MusicTrack, UserProfile } from "@/types/database";
 
 export type SceneType = 'start' | 'universe' | 'my_galaxy'
 export type ViewMode = 'universe' | 'galaxy'
 export type DurationKeys = keyof typeof DURATIONS
-
-export interface MusicTrack {
-    id: string
-    title: string
-    external_url?: string
-    status: 'draft' | 'published' | 'archived' | 'fragment'
-    created_at: string
-}
 
 interface AppState {
     // シーン状態
@@ -56,6 +49,7 @@ interface AppState {
 
     // 認証・永続化状態
     user: User | null
+    userProfile: UserProfile | null
     session: Session | null
 
     // 基本アクション
@@ -65,7 +59,7 @@ interface AppState {
     resetState: () => void
     syncWithCloud: () => Promise<void>
     loadFromCloud: () => Promise<void>
-    syncProfile: () => Promise<void>
+    fetchUserProfile: () => Promise<void>
     saveCurrentState: () => Promise<void>
 
     // Status Setters
@@ -117,6 +111,7 @@ interface AppState {
 export const useStore = create<AppState>((set, get) => ({
     // 初期状態
     user: null,
+    userProfile: null,
     session: null,
     currentScene: 'start',
     viewMode: 'universe',
@@ -302,7 +297,7 @@ export const useStore = create<AppState>((set, get) => ({
             selectedGalaxyId: null,
             erosionLevel: 0.0,
             kardashevScale: 1.24,
-            lastPosition: null,
+            lastPosition: null, // Reset position history on logout
             isMenuOpen: false,
             isStatusOpen: false,
             isNotionOpen: false,
@@ -311,7 +306,7 @@ export const useStore = create<AppState>((set, get) => ({
         });
     },
 
-    syncProfile: async () => {
+    fetchUserProfile: async () => {
         const state = get();
         if (!state.user) return;
 
@@ -319,27 +314,30 @@ export const useStore = create<AppState>((set, get) => ({
         try {
             const { data, error } = await supabase
                 .from('profiles')
-                .select('game_state')
+                .select('*')
                 .eq('id', state.user.id)
                 .single();
 
             if (error && error.code !== 'PGRST116') throw error;
 
-            if (data?.game_state) {
-                const gameState = data.game_state as any;
-                console.log('Restoring game state:', gameState);
+            if (data) {
+                const profile = data as UserProfile;
+                console.log('User profile fetched:', profile);
+                set({ userProfile: profile });
 
-                set({
-                    // Restore only persistent fields
-                    erosionLevel: gameState.erosionLevel ?? 0.0,
-                    kardashevScale: gameState.kardashevScale ?? 1.24,
-                    lastPosition: gameState.lastPosition ?? null,
-                    // If resuming directly, we might want to set these, but usually we wait for "START" action
-                    // For now just load into memory, and let StartScreen logic handle the jump
-                });
+                if (profile.game_state) {
+                    const gameState = profile.game_state as any;
+                    console.log('Restoring game state:', gameState);
+
+                    set({
+                        erosionLevel: gameState.erosionLevel ?? 0.0,
+                        kardashevScale: gameState.kardashevScale ?? 1.24,
+                        lastPosition: gameState.lastPosition ?? null,
+                    });
+                }
             }
         } catch (error: any) {
-            console.error('Failed to sync profile:', error.message || error);
+            console.error('Failed to fetch user profile:', error.message || error);
         }
     },
 
@@ -387,7 +385,7 @@ export const useStore = create<AppState>((set, get) => ({
     },
 
     loadFromCloud: async () => {
-        await get().syncProfile();
+        await get().fetchUserProfile();
     },
 
     fetchMusicTracks: async () => {
@@ -405,14 +403,12 @@ export const useStore = create<AppState>((set, get) => ({
             if (error) throw error;
 
             if (data) {
-                console.log('Music tracks fetched:', data);
-                set({ musicTracks: data as MusicTrack[] });
+                const tracks: MusicTrack[] = data as MusicTrack[];
+                console.log('Music tracks fetched:', tracks);
+                set({ musicTracks: tracks });
             }
         } catch (error: any) {
             console.error('Failed to fetch music tracks:', error.message || error);
         }
     }
 }))
-
-
-
