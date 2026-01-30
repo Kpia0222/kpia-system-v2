@@ -10,7 +10,8 @@ export const useAutoSave = () => {
         erosionLevel,
         kardashevScale,
         saveCurrentState,
-        user
+        user,
+        isVisitingMode,
     } = useStore();
 
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -18,6 +19,7 @@ export const useAutoSave = () => {
     // 監視対象のステートが変更されたらタイマーをリセット
     useEffect(() => {
         if (!user) return; // ログインしていない場合は何もしない
+        if (isVisitingMode) return; // 訪問モード中は自動保存を無効化
 
         if (timeoutRef.current) {
             clearTimeout(timeoutRef.current);
@@ -33,5 +35,5 @@ export const useAutoSave = () => {
                 clearTimeout(timeoutRef.current);
             }
         };
-    }, [currentScene, viewMode, isDnaMode, selectedGalaxyId, erosionLevel, kardashevScale, saveCurrentState, user]);
+    }, [currentScene, viewMode, isDnaMode, selectedGalaxyId, erosionLevel, kardashevScale, saveCurrentState, user, isVisitingMode]);
 };

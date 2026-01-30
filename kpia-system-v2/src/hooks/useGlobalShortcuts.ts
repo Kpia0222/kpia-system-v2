@@ -30,6 +30,7 @@ export function useGlobalShortcuts() {
         isMapOpen,
         isStatusOpen,
         isNotionOpen,
+        isSocialOpen,
         openMenu,
         toggleMenu,
         toggleMute,
@@ -54,7 +55,7 @@ export function useGlobalShortcuts() {
             // If input is active, we generally ignore app shortcuts except maybe Escape logic if desired.
             if (isInputActive && e.key !== 'Escape') return;
 
-            const anyMenuOpen = isMenuOpen || isMapOpen || isStatusOpen || isNotionOpen;
+            const anyMenuOpen = isMenuOpen || isMapOpen || isStatusOpen || isNotionOpen || isSocialOpen;
 
             // Helper to check key match
             const isKey = (keys: readonly string[]) => keys.includes(e.key);
@@ -152,6 +153,13 @@ export function useGlobalShortcuts() {
                 return;
             }
 
+            // === F6: Social menu ===
+            if (isKey(SHORTCUTS.SOCIAL.TOGGLE) && !anyMenuOpen) {
+                e.preventDefault();
+                toggleMenu('social');
+                return;
+            }
+
             // === Block if menu open or transitioning ===
             if (anyMenuOpen || isTransitioning || isLoading) return;
 
@@ -206,6 +214,7 @@ export function useGlobalShortcuts() {
         isMapOpen,
         isStatusOpen,
         isNotionOpen,
+        isSocialOpen,
         setViewMode,
         setDnaMode,
         setDiving,

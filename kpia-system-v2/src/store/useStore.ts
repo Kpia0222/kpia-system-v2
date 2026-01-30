@@ -36,7 +36,13 @@ interface AppState {
     isNotionOpen: boolean
     isMapOpen: boolean
     isAuthOpen: boolean
+    isSocialOpen: boolean
     isMuted: boolean
+
+    // 訪問モード（他ユーザーの宇宙を観測中）
+    isVisitingMode: boolean
+    visitingUserId: string | null
+    displayId: string | null
 
     // ステータス・シミュレーション
     erosionLevel: number
@@ -81,11 +87,16 @@ interface AppState {
     setInitialDive: (value: boolean) => void
     setHoveredGalaxy: (id: string | null) => void
     setSelectedGalaxy: (id: string | null) => void
-    openMenu: (menu: 'menu' | 'status' | 'notion' | 'map' | 'auth') => void
-    closeMenu: (menu: 'menu' | 'status' | 'notion' | 'map' | 'auth') => void
-    toggleMenu: (menu: 'menu' | 'status' | 'notion' | 'map' | 'auth') => void
+    openMenu: (menu: 'menu' | 'status' | 'notion' | 'map' | 'auth' | 'social') => void
+    closeMenu: (menu: 'menu' | 'status' | 'notion' | 'map' | 'auth' | 'social') => void
+    toggleMenu: (menu: 'menu' | 'status' | 'notion' | 'map' | 'auth' | 'social') => void
     closeAllMenus: () => void
     toggleMute: () => void
+
+    // 訪問モードアクション
+    enterVisitingMode: (userId: string) => void
+    exitVisitingMode: () => void
+    generateDisplayId: () => Promise<void>
 
     // 遷移アクション（複合操作）
     executeSceneTransition: (
@@ -130,7 +141,13 @@ export const useStore = create<AppState>((set, get) => ({
     isNotionOpen: false,
     isMapOpen: false,
     isAuthOpen: false,
+    isSocialOpen: false,
     isMuted: false,
+
+    // 訪問モード初期状態
+    isVisitingMode: false,
+    visitingUserId: null,
+    displayId: null,
 
     erosionLevel: 0.0,
     kardashevScale: 1.24,
@@ -159,14 +176,16 @@ export const useStore = create<AppState>((set, get) => ({
         const key = menu === 'menu' ? 'isMenuOpen' :
             menu === 'status' ? 'isStatusOpen' :
                 menu === 'notion' ? 'isNotionOpen' :
-                    menu === 'map' ? 'isMapOpen' : 'isAuthOpen'
+                    menu === 'map' ? 'isMapOpen' :
+                        menu === 'social' ? 'isSocialOpen' : 'isAuthOpen'
         set({ [key]: true })
     },
     closeMenu: (menu) => {
         const key = menu === 'menu' ? 'isMenuOpen' :
             menu === 'status' ? 'isStatusOpen' :
                 menu === 'notion' ? 'isNotionOpen' :
-                    menu === 'map' ? 'isMapOpen' : 'isAuthOpen'
+                    menu === 'map' ? 'isMapOpen' :
+                        menu === 'social' ? 'isSocialOpen' : 'isAuthOpen'
         set({ [key]: false })
     },
     toggleMenu: (menu) => {
@@ -174,7 +193,8 @@ export const useStore = create<AppState>((set, get) => ({
             const key = menu === 'menu' ? 'isMenuOpen' :
                 menu === 'status' ? 'isStatusOpen' :
                     menu === 'notion' ? 'isNotionOpen' :
-                        menu === 'map' ? 'isMapOpen' : 'isAuthOpen'
+                        menu === 'map' ? 'isMapOpen' :
+                            menu === 'social' ? 'isSocialOpen' : 'isAuthOpen'
             return { [key]: !state[key] }
         })
     },
@@ -184,8 +204,48 @@ export const useStore = create<AppState>((set, get) => ({
         isNotionOpen: false,
         isMapOpen: false,
         isAuthOpen: false,
+        isSocialOpen: false,
     }),
     toggleMute: () => set((state) => ({ isMuted: !state.isMuted })),
+
+    // 訪問モードアクション
+    enterVisitingMode: (userId) => set({ isVisitingMode: true, visitingUserId: userId }),
+    exitVisitingMode: () => set({ isVisitingMode: false, visitingUserId: null }),
+
+    generateDisplayId: async () => {
+        const state = get();
+        if (!state.user || state.displayId) return;
+
+        const supabase = createClient();
+
+        try {
+            // Get the maximum existing display_id to generate the next sequential ID
+            // Use RPC or direct query - for now, generate based on timestamp + random for uniqueness
+            // Sequential IDs starting from 100000000
+            const baseId = 100000000;
+            const timestamp = Date.now();
+            const random = Math.floor(Math.random() * 1000);
+            const newDisplayId = String(baseId + (timestamp % 900000000) + random).slice(0, 9);
+
+            set({ displayId: newDisplayId });
+
+            // Save to Supabase profile
+            const { error } = await supabase
+                .from('profiles')
+                .upsert({
+                    id: state.user.id,
+                    updated_at: new Date().toISOString(),
+                    game_state: {
+                        ...(state.userProfile?.game_state as any || {}),
+                        display_id: newDisplayId,
+                    },
+                });
+            if (error) throw error;
+            console.log('Display ID generated:', newDisplayId);
+        } catch (error: any) {
+            console.error('Failed to save display ID:', error.message || error);
+        }
+    },
 
     // ============================================================================
     // 遷移アクション（複合操作）- DURATIONS を使用
@@ -333,6 +393,7 @@ export const useStore = create<AppState>((set, get) => ({
                         erosionLevel: gameState.erosionLevel ?? 0.0,
                         kardashevScale: gameState.kardashevScale ?? 1.24,
                         lastPosition: gameState.lastPosition ?? null,
+                        displayId: gameState.display_id ?? null,
                     });
                 }
             }

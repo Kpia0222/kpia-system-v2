@@ -35,6 +35,8 @@ import { UniversalMenu } from "@/components/dom/menus/UniversalMenu";
 import { StatusMenu } from "@/components/dom/features/StatusMenu";
 import { NotionMenu } from "@/components/dom/menus/NotionMenu";
 import { MapMenu } from "@/components/dom/menus/MapMenu";
+import { SocialMenu } from "@/components/dom/overlays/SocialMenu";
+import { RealtimeToast } from "@/components/dom/overlays/RealtimeToast";
 import { StartScreen } from "@/components/dom/overlays/StartScreen";
 import { LoadingScreen } from "@/components/dom/overlays/LoadingScreen";
 import { ScanlineEffect } from "@/components/dom/effects/ScanlineEffect";
@@ -197,6 +199,8 @@ export default function Home() {
       <StatusMenu />
       <NotionMenu />
       <MapMenu />
+      <SocialMenu />
+      <RealtimeToast />
 
 
 

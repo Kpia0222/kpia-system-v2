@@ -75,5 +75,34 @@ export interface Database {
 }
 
 export type Profile = Database['public']['Tables']['profiles']['Row']
-export type UserProfile = Profile
+export type UserProfile = Profile & {
+    display_id?: string | null
+}
 export type MusicTrack = Database['public']['Tables']['music_metadata']['Row']
+
+// Social Features
+export interface FriendRequest {
+    id: string
+    from_user_id: string
+    from_display_id: string
+    to_user_id: string
+    status: 'pending' | 'accepted' | 'rejected'
+    created_at: string
+}
+
+export interface UniverseBeacon {
+    id: string
+    owner_user_id: string
+    owner_display_id: string
+    target_user_id: string
+    position: { x: number; y: number; z: number }
+    message: string
+    created_at: string
+}
+
+export interface SocialData {
+    display_id: string | null
+    friends: string[] // Array of user IDs
+    pending_requests: FriendRequest[]
+    beacons: UniverseBeacon[]
+}

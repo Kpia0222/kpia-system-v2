@@ -11,6 +11,9 @@ export const SHORTCUTS = {
     NOTION: {
         TOGGLE: ['F3'],
     },
+    SOCIAL: {
+        TOGGLE: ['F6'],
+    },
     SCENE: {
         TOGGLE_MODE: ['F1'], // Switch between Universe/DNA
         RETURN_START: ['Home'],

@@ -15,6 +15,7 @@ interface MenuButton {
 const getMenuButtons = (currentScene: 'start' | 'universe' | 'my_galaxy'): MenuButton[] => [
     { id: "universal", label: MENU_LABELS.HUD.MENU, shortcut: "ESC" },
     { id: "map", label: MENU_LABELS.HUD.MAP, shortcut: "F5" },
+    { id: "social", label: "SOCIAL", shortcut: "F6" },
     { id: "status", label: MENU_LABELS.HUD.STATUS, shortcut: "F4" },
     { id: "notion", label: MENU_LABELS.HUD.NOTION, shortcut: "F3" },
     { id: "sound", label: MENU_LABELS.HUD.SOUND, shortcut: "F2" },
@@ -56,6 +57,16 @@ const IconUniversal = () => (
         <line x1="30" y1="65" x2="70" y2="65" />
     </g>
 );
+
+const IconSocial = () => (
+    <g stroke="currentColor" strokeWidth="4" strokeLinecap="round" fill="none">
+        <circle cx="35" cy="40" r="10" />
+        <circle cx="65" cy="40" r="10" />
+        <path d="M35 55 Q50 70 65 55" />
+        <circle cx="50" cy="65" r="6" fill="currentColor" />
+    </g>
+);
+
 
 const IconMap = () => (
     <g stroke="currentColor" strokeWidth="4" strokeLinecap="round">
@@ -102,10 +113,12 @@ const IconGalaxy = () => (
     </g>
 );
 
+
 const getIcon = (id: string, label?: string) => {
     switch (id) {
         case 'universal': return <IconUniversal />;
         case 'map': return <IconMap />;
+        case 'social': return <IconSocial />;
         case 'status': return <IconStatus />;
         case 'notion': return <IconNotion />;
         case 'sound': return <IconSound />;
@@ -272,6 +285,7 @@ export function GameMenuHUD() {
         switch (id) {
             case 'universal': return () => openMenu('menu');
             case 'map': return () => openMenu('map');
+            case 'social': return () => openMenu('social');
             case 'status': return () => openMenu('status');
             case 'notion': return () => openMenu('notion');
             case 'sound': return toggleMute;
