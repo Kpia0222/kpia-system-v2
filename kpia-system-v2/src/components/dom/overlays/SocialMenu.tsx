@@ -163,7 +163,7 @@ export function SocialMenu() {
                             transition={{ duration: 2 }}
                         />
 
-                        {/* System Log */}
+                        {/* System Log with Chromatic Aberration */}
                         <div className="relative z-10 text-center">
                             <motion.div
                                 className="font-mono text-[#ff8800] text-sm tracking-[0.3em] mb-4"
@@ -173,14 +173,52 @@ export function SocialMenu() {
                             >
                                 DIMENSIONAL JUMP INITIATED
                             </motion.div>
+
+                            {/* Chromatic Aberration Text */}
                             <motion.div
-                                className="font-mono text-white text-xs tracking-widest"
+                                className="relative font-mono text-xs tracking-widest"
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 transition={{ delay: 0.8 }}
                             >
-                                NAVIGATING TO TARGET GALAXY...
+                                {/* Red channel - offset left */}
+                                <motion.span
+                                    className="absolute inset-0 text-red-500/60"
+                                    animate={{
+                                        x: [-2, -1, -2],
+                                    }}
+                                    transition={{
+                                        duration: 0.15,
+                                        repeat: Infinity,
+                                        repeatType: "reverse",
+                                    }}
+                                >
+                                    NAVIGATING TO TARGET GALAXY...
+                                </motion.span>
+                                {/* Green channel - center */}
+                                <span className="relative text-green-400/60">
+                                    NAVIGATING TO TARGET GALAXY...
+                                </span>
+                                {/* Blue channel - offset right */}
+                                <motion.span
+                                    className="absolute inset-0 text-blue-400/60"
+                                    animate={{
+                                        x: [2, 1, 2],
+                                    }}
+                                    transition={{
+                                        duration: 0.15,
+                                        repeat: Infinity,
+                                        repeatType: "reverse",
+                                    }}
+                                >
+                                    NAVIGATING TO TARGET GALAXY...
+                                </motion.span>
+                                {/* White overlay for blending */}
+                                <span className="absolute inset-0 text-white/80 mix-blend-overlay">
+                                    NAVIGATING TO TARGET GALAXY...
+                                </span>
                             </motion.div>
+
                             {jumpTarget && (
                                 <motion.div
                                     className="font-mono text-[#ff8800]/60 text-xs tracking-widest mt-4"
@@ -380,8 +418,8 @@ export function SocialMenu() {
                                                 <div className="flex items-center gap-3">
                                                     <div
                                                         className={`w-2 h-2 rounded-full ${explorer.status === "online"
-                                                                ? "bg-green-500 animate-pulse"
-                                                                : "bg-gray-500"
+                                                            ? "bg-green-500 animate-pulse"
+                                                            : "bg-gray-500"
                                                             }`}
                                                     />
                                                     <div>

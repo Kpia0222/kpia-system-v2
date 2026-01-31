@@ -2,9 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useStore } from "@/store/useStore";
-import { getSystemGreeting } from "@/utils/time";
 import { MENU_LABELS, UI_STRINGS } from "@/config/ui-strings";
-import { AnalogClock } from "../shared/AnalogClock";
+import { MAIN_MENU_BUTTONS, SEPARATED_MENU_BUTTON, getMenuLabel } from "@/config/menu-config";
 
 interface MenuButton {
     id: string;
@@ -12,19 +11,21 @@ interface MenuButton {
     shortcut: string;
 }
 
-const getMenuButtons = (currentScene: 'start' | 'universe' | 'my_galaxy'): MenuButton[] => [
-    { id: "universal", label: MENU_LABELS.HUD.MENU, shortcut: "ESC" },
-    { id: "map", label: MENU_LABELS.HUD.MAP, shortcut: "F5" },
-    { id: "social", label: "SOCIAL", shortcut: "F6" },
-    { id: "status", label: MENU_LABELS.HUD.STATUS, shortcut: "F4" },
-    { id: "notion", label: MENU_LABELS.HUD.NOTION, shortcut: "F3" },
-    { id: "sound", label: MENU_LABELS.HUD.SOUND, shortcut: "F2" },
-    {
-        id: "scene_toggle",
-        label: currentScene === 'universe' ? MENU_LABELS.HUD.HOME : MENU_LABELS.HUD.UNIVERSE,
-        shortcut: "F1"
-    },
-];
+// Build main buttons from config (left-to-right order)
+const buildMainButtons = (currentScene: 'start' | 'universe' | 'my_galaxy'): MenuButton[] => {
+    return MAIN_MENU_BUTTONS.map(config => ({
+        id: config.id,
+        label: getMenuLabel(config, currentScene),
+        shortcut: config.shortcut,
+    }));
+};
+
+// Build separated MENU button
+const buildMenuButton = (currentScene: 'start' | 'universe' | 'my_galaxy'): MenuButton => ({
+    id: SEPARATED_MENU_BUTTON.id,
+    label: getMenuLabel(SEPARATED_MENU_BUTTON, currentScene),
+    shortcut: SEPARATED_MENU_BUTTON.shortcut,
+});
 
 // SVG Path for Hexagon (Pointy top/bottom) based on 100x100 viewBox
 const HEX_POINTS = "50,5 93.3,27.5 93.3,72.5 50,95 6.7,72.5 6.7,27.5";
@@ -243,27 +244,15 @@ export function GameMenuHUD() {
     } = useStore();
 
     const [isLoaded, setIsLoaded] = useState(false);
-    const [greeting, setGreeting] = useState("");
 
     useEffect(() => {
         const timer = setTimeout(() => setIsLoaded(true), 100);
         return () => clearTimeout(timer);
     }, []);
 
-    // Greeting Update Logic
-    useEffect(() => {
-        // Initial set
-        setGreeting(getSystemGreeting());
-
-        // Update every minute (less frequent than clock)
-        const interval = setInterval(() => {
-            setGreeting(getSystemGreeting());
-        }, 60000);
-
-        return () => clearInterval(interval);
-    }, []);
-
-    const buttons = getMenuButtons(currentScene);
+    // Build buttons from config
+    const mainButtons = buildMainButtons(currentScene);
+    const menuButton = buildMenuButton(currentScene);
 
     // Scene toggle logic (previously in page.tsx)
     const handleSceneToggle = () => {
@@ -297,29 +286,10 @@ export function GameMenuHUD() {
     return (
         <div className="fixed top-6 right-6 z-50 pointer-events-none flex flex-col items-end gap-6">
 
-            {/* Clock & Greeting System */}
-            <div className={`
-                flex items-center gap-4
-                transition-all duration-1000 ease-out
-                ${isLoaded ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4"}
-            `}>
-                <div className="flex flex-col items-end">
-                    <div className="font-mono text-xs font-bold tracking-[0.2em] text-[#ff8800] text-shadow-sm text-right">
-                        {greeting}
-                    </div>
-                    <div className="h-[1px] w-full bg-[#ff8800]/30 mt-1" />
-                </div>
-
-                {/* Tactical Clock */}
-                <div className="relative">
-                    <AnalogClock size={48} />
-                </div>
-            </div>
-
-            {/* Visual Order (Left to right): F1, F2, F3, F4, F5 */}
-            {/* DOM Order (due to flex-row-reverse): F5, F4, F3, F2, F1 */}
-            <div className="flex flex-row-reverse items-start gap-5">
-                {buttons.map((button, index) => (
+            {/* Left to Right: [GALAXY, SOUND, NOTION, STATUS, MAP, SOCIAL] | [MENU] */}
+            <div className="flex flex-row items-center gap-5">
+                {/* Main menu buttons (left side) */}
+                {mainButtons.map((button, index) => (
                     <MenuButtonItem
                         key={button.id}
                         button={button}
@@ -329,6 +299,27 @@ export function GameMenuHUD() {
                         isMuted={isMuted}
                     />
                 ))}
+
+                {/* Vertical Separator Line */}
+                <div
+                    className={`
+                        w-[1px] h-10 bg-white/30
+                        transition-all duration-500 ease-out
+                        ${isLoaded ? "opacity-100" : "opacity-0"}
+                    `}
+                    style={{
+                        boxShadow: "0 0 4px rgba(255,255,255,0.2)",
+                    }}
+                />
+
+                {/* Separated MENU button (right side) */}
+                <MenuButtonItem
+                    button={menuButton}
+                    index={mainButtons.length}
+                    isVisible={isLoaded}
+                    onClick={getHandler(menuButton.id)}
+                    isMuted={isMuted}
+                />
             </div>
 
             {/* Decorative Corner */}
