@@ -3,155 +3,136 @@
 import { useRef, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
+import { Html } from "@react-three/drei";
+
+// ============================================================================
+// WarpEffect - 虹色のガラス反射ワープ演出
+// ============================================================================
 
 interface WarpEffectProps {
     active: boolean;
     streakCount?: number;
+    targetGalaxyName?: string;
 }
 
 /**
- * WarpEffect - Rainbow glass warp transition effect
+ * WarpEffect - JUMP演出用の星ストリークエフェクト
+ * 
+ * - 100本の虹色ガラス反射ストリーク
+ * - MeshPhysicalMaterial: iridescence, transmission, thickness
+ * - ナビゲーションテキスト表示
  */
-export function WarpEffect({ active, streakCount = 100 }: WarpEffectProps) {
-    const groupRef = useRef<THREE.Group>(null);
-    const streaksRef = useRef<THREE.InstancedMesh>(null);
+export function WarpEffect({
+    active,
+    streakCount = 100,
+    targetGalaxyName = "TARGET GALAXY"
+}: WarpEffectProps) {
+    const groupRef = useRef<THREE.Group>(null!);
 
-    // Create streak positions and speeds
-    const streakData = useMemo(() => {
-        const positions: THREE.Vector3[] = [];
-        const speeds: number[] = [];
-        const lengths: number[] = [];
-
-        for (let i = 0; i < streakCount; i++) {
-            const angle = Math.random() * Math.PI * 2;
-            const radius = 2 + Math.random() * 8;
-            const x = Math.cos(angle) * radius;
-            const y = Math.sin(angle) * radius;
-            const z = Math.random() * 20 - 10;
-
-            positions.push(new THREE.Vector3(x, y, z));
-            speeds.push(0.5 + Math.random() * 1.5);
-            lengths.push(0.5 + Math.random() * 2);
-        }
-
-        return { positions, speeds, lengths };
+    // 星ストリーク生成
+    const streaks = useMemo(() => {
+        return Array.from({ length: streakCount }, (_, i) => ({
+            id: i,
+            // 円筒座標で配置
+            angle: (i / streakCount) * Math.PI * 2 + Math.random() * 0.5,
+            radius: 50 + Math.random() * 150,
+            length: 20 + Math.random() * 80,
+            speed: 0.5 + Math.random() * 1.5,
+            offset: Math.random() * 200,
+            // 虹色のための色相オフセット
+            hue: (i / streakCount) * 360,
+        }));
     }, [streakCount]);
 
-    // Geometry for individual streak
-    const streakGeometry = useMemo(() => {
-        return new THREE.CylinderGeometry(0.02, 0.02, 1, 8, 1);
-    }, []);
-
-    // Rainbow glass material with iridescence
+    // 虹色ガラスマテリアル
     const material = useMemo(() => {
         return new THREE.MeshPhysicalMaterial({
-            color: 0xffffff,
-            metalness: 0.5,
+            color: new THREE.Color().setHSL(0, 0.8, 0.7),
+            metalness: 0.1,
             roughness: 0,
             transmission: 0.9,
             thickness: 0.5,
-            ior: 2.33,
+            ior: 1.5,
             iridescence: 1.0,
-            iridescenceIOR: 1.5,
+            iridescenceIOR: 1.3,
             iridescenceThicknessRange: [100, 400],
-            envMapIntensity: 1.5,
+            clearcoat: 1.0,
+            clearcoatRoughness: 0,
+            envMapIntensity: 2.0,
             transparent: true,
             opacity: 0.9,
         });
     }, []);
 
-    // Animation
+    // ストリーク形状 (細長いボックス)
+    const geometry = useMemo(() => {
+        return new THREE.CylinderGeometry(0.5, 0.5, 1, 8);
+    }, []);
+
+    // アニメーション
     useFrame((state, delta) => {
-        if (!active || !streaksRef.current) return;
+        if (!active || !groupRef.current) return;
 
-        const mesh = streaksRef.current;
-        const matrix = new THREE.Matrix4();
-        const position = new THREE.Vector3();
-        const quaternion = new THREE.Quaternion();
-        const scale = new THREE.Vector3();
+        groupRef.current.children.forEach((child, i) => {
+            if (child instanceof THREE.Mesh) {
+                const streak = streaks[i];
+                // Z軸方向に高速移動
+                child.position.z -= streak.speed * delta * 500;
 
-        for (let i = 0; i < streakCount; i++) {
-            mesh.getMatrixAt(i, matrix);
-            matrix.decompose(position, quaternion, scale);
+                // 画面外に出たらリセット
+                if (child.position.z < -300) {
+                    child.position.z = streak.offset + 200;
+                }
 
-            position.z += delta * streakData.speeds[i] * 30;
-
-            if (position.z > 15) {
-                position.z = -15;
-                const angle = Math.random() * Math.PI * 2;
-                const radius = 2 + Math.random() * 8;
-                position.x = Math.cos(angle) * radius;
-                position.y = Math.sin(angle) * radius;
+                // 虹色の色相を時間で変化
+                const hue = ((streak.hue + state.clock.elapsedTime * 50) % 360) / 360;
+                (child.material as THREE.MeshPhysicalMaterial).color.setHSL(hue, 0.8, 0.7);
             }
+        });
 
-            matrix.compose(position, quaternion, scale);
-            mesh.setMatrixAt(i, matrix);
-        }
-
-        mesh.instanceMatrix.needsUpdate = true;
+        // グループ全体を微妙に回転
+        groupRef.current.rotation.z += delta * 0.1;
     });
-
-    // Initialize streak positions
-    useMemo(() => {
-        if (!active) return;
-
-        const mesh = streaksRef.current;
-        if (!mesh) return;
-
-        const matrix = new THREE.Matrix4();
-        const quaternion = new THREE.Quaternion();
-        quaternion.setFromEuler(new THREE.Euler(Math.PI / 2, 0, 0));
-
-        for (let i = 0; i < streakCount; i++) {
-            const position = streakData.positions[i];
-            const scale = new THREE.Vector3(1, streakData.lengths[i], 1);
-            matrix.compose(position, quaternion, scale);
-            mesh.setMatrixAt(i, matrix);
-        }
-
-        mesh.instanceMatrix.needsUpdate = true;
-    }, [active, streakCount, streakData]);
 
     if (!active) return null;
 
     return (
         <group ref={groupRef}>
-            <instancedMesh
-                ref={streaksRef}
-                args={[streakGeometry, material, streakCount]}
-                frustumCulled={false}
-            />
+            {/* 星ストリーク群 */}
+            {streaks.map((streak) => {
+                const x = Math.cos(streak.angle) * streak.radius;
+                const y = Math.sin(streak.angle) * streak.radius;
+                const z = streak.offset;
 
-            {/* Central glow sphere */}
-            <mesh>
-                <sphereGeometry args={[0.5, 32, 32]} />
-                <meshPhysicalMaterial
-                    color={0xffffff}
-                    emissive={0xffffff}
-                    emissiveIntensity={0.5}
-                    metalness={0.5}
-                    roughness={0}
-                    iridescence={1.0}
-                    iridescenceIOR={1.5}
-                    iridescenceThicknessRange={[100, 400]}
-                    transparent
-                    opacity={0.8}
-                />
-            </mesh>
+                return (
+                    <mesh
+                        key={streak.id}
+                        geometry={geometry}
+                        material={material.clone()}
+                        position={[x, y, z]}
+                        rotation={[Math.PI / 2, 0, 0]}
+                        scale={[1, streak.length, 1]}
+                    />
+                );
+            })}
 
-            {/* Outer ring glow */}
-            <mesh rotation={[Math.PI / 2, 0, 0]}>
-                <torusGeometry args={[3, 0.05, 8, 64]} />
-                <meshPhysicalMaterial
-                    color={0xffffff}
-                    metalness={0.5}
-                    roughness={0}
-                    iridescence={1.0}
-                    iridescenceIOR={1.5}
-                    transparent
-                    opacity={0.6}
-                />
-            </mesh>
+            {/* ナビゲーションテキスト */}
+            <Html center position={[0, 0, -100]} style={{ pointerEvents: 'none' }}>
+                <div className="text-center font-mono tracking-[0.3em] animate-pulse">
+                    <div className="text-[#ff8800] text-xl font-bold mb-2">
+                        NAVIGATING TO
+                    </div>
+                    <div className="text-white text-3xl font-black">
+                        {targetGalaxyName}
+                    </div>
+                    <div className="text-white/50 text-sm mt-4">
+                        ▸▸▸ WARP DRIVE ENGAGED ▸▸▸
+                    </div>
+                </div>
+            </Html>
+
+            {/* 中心の光源 */}
+            <pointLight position={[0, 0, 0]} intensity={2} color="#ff8800" distance={300} />
         </group>
     );
 }

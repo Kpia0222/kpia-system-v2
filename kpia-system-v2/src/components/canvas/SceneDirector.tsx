@@ -5,13 +5,12 @@ import { Sparkles, CameraControls } from "@react-three/drei";
 import { useStore } from "@/store/useStore";
 import { UI_COLORS, TRANSITION_DURATIONS } from "@/config/system-settings";
 import {
-    CAM_POS_DEFAULT,
-    CAM_POS_ZOOM,
     CAM_POS_START,
     STARTUP_LOOK_AT,
     CAMERA_CONSTRAINTS,
 } from "@/config/camera-settings";
 import { useEffect } from "react";
+import { useStartupSequence } from "@/hooks/useStartupSequence";
 
 // Scene Components
 import { KpiaUniverse, galaxies } from "@/components/canvas/_scenes/KpiaUniverse";
@@ -54,6 +53,9 @@ export function SceneDirector() {
     const hoveredGalaxy = galaxies.find(g => g.id === hoveredGalaxyId) ?? null;
     const selectedGalaxy = galaxies.find(g => g.id === selectedGalaxyId) ?? null;
 
+    // Leva Configuration
+
+
     // ========================================
     // Initial Dive Animation (Start Scene)
     // ========================================
@@ -82,39 +84,33 @@ export function SceneDirector() {
     // ========================================
     // Startup Transition Animation (Start → MyGalaxy)
     // ========================================
+
+    // ========================================
+    // Startup Transition Animation (Start → MyGalaxy)
+    // Managed by custom hook
+    // ========================================
+    useStartupSequence(controlsRef);
+
+
+    // ========================================
+    // Return to Start Scene Camera Reset
+    // ========================================
+    // 前のシーンを追跡（「スタート画面に戻った」ことを検出するため）
+    const prevSceneRef = useRef(currentScene);
+
     useEffect(() => {
-        if (!isStartupTransition || !controlsRef.current) return;
+        const prevScene = prevSceneRef.current;
+        prevSceneRef.current = currentScene;
 
-        const midpointTimer = setTimeout(() => {
-            setCurrentScene('my_galaxy');
-            setAwakening(true);
-
-            controlsRef.current?.setLookAt(
-                CAM_POS_ZOOM.x, CAM_POS_ZOOM.y, CAM_POS_ZOOM.z * 1.5,
+        // 「他のシーンからスタート画面に戻った」場合のみカメラをリセット
+        // 初回起動時（prevScene === 'start' && currentScene === 'start'）はスキップ
+        if (prevScene !== 'start' && currentScene === 'start' && controlsRef.current) {
+            controlsRef.current.setLookAt(
+                CAM_POS_START.x, CAM_POS_START.y, CAM_POS_START.z,
                 0, 0, 0, false
             );
-
-            setTimeout(() => {
-                controlsRef.current?.setLookAt(
-                    CAM_POS_DEFAULT.x, CAM_POS_DEFAULT.y, CAM_POS_DEFAULT.z,
-                    0, 0, 0, true
-                );
-            }, TRANSITION_DURATIONS.cameraMove);
-
-            setTimeout(() => {
-                setAwakening(false);
-            }, TRANSITION_DURATIONS.awakeningEffect);
-        }, TRANSITION_DURATIONS.sceneTransition / 2);
-
-        const completeTimer = setTimeout(() => {
-            setStartupTransition(false);
-        }, TRANSITION_DURATIONS.sceneTransition);
-
-        return () => {
-            clearTimeout(midpointTimer);
-            clearTimeout(completeTimer);
-        };
-    }, [isStartupTransition, setCurrentScene, setAwakening, setStartupTransition]);
+        }
+    }, [currentScene]);
 
     // ========================================
     // Start Scene
@@ -159,6 +155,7 @@ export function SceneDirector() {
                 <CameraControls
                     ref={controlsRef}
                     makeDefault
+                    enabled={!isStartupTransition}
                     minDistance={CAMERA_CONSTRAINTS.myGalaxy.minDistance}
                     maxDistance={CAMERA_CONSTRAINTS.myGalaxy.maxDistance}
                     smoothTime={isDiving ? CAMERA_CONSTRAINTS.myGalaxy.smoothTime.diving : CAMERA_CONSTRAINTS.myGalaxy.smoothTime.default}

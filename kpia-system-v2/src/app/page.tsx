@@ -2,6 +2,7 @@
 
 import { Canvas } from "@react-three/fiber";
 import { Environment } from "@react-three/drei";
+import { Leva } from "leva";
 import { EffectComposer, Bloom, Noise } from "@react-three/postprocessing";
 
 // Custom Hooks
@@ -11,6 +12,7 @@ import { useAuthSession } from "@/hooks/useAuthSession";
 
 // Config
 import { CAMERA_PROPERTIES, CAMERA_INITIAL_POSITION } from "@/config/camera-settings";
+import { ENVIRONMENT_LIGHTING, POST_PROCESSING } from "@/config/environment-settings";
 
 // Directors
 import { SceneDirector } from "@/components/canvas/SceneDirector";
@@ -28,6 +30,9 @@ export default function Home() {
 
   return (
     <main className="h-screen w-full bg-black relative">
+      {/* Development GUI - Draggable & Wider */}
+      <Leva theme={{ sizes: { rootWidth: '350px' } }} flat />
+
       {/* UI Layer */}
       <UIManager />
 
@@ -41,16 +46,23 @@ export default function Home() {
           far: CAMERA_PROPERTIES.far,
         }}
       >
-        <ambientLight intensity={0.5} />
-        <Environment preset="city" />
+        <ambientLight intensity={ENVIRONMENT_LIGHTING.ambientIntensity} />
+        <Environment
+          preset={ENVIRONMENT_LIGHTING.preset}
+          environmentIntensity={ENVIRONMENT_LIGHTING.environmentIntensity}
+        />
 
         {/* Scene Director handles all 3D scene rendering */}
         <SceneDirector />
 
         {/* Post-processing effects */}
         <EffectComposer>
-          <Bloom luminanceThreshold={0.5} luminanceSmoothing={0.9} intensity={2.0} />
-          <Noise opacity={0.02} />
+          <Bloom
+            luminanceThreshold={POST_PROCESSING.bloom.luminanceThreshold}
+            luminanceSmoothing={POST_PROCESSING.bloom.luminanceSmoothing}
+            intensity={POST_PROCESSING.bloom.intensity}
+          />
+          <Noise opacity={POST_PROCESSING.noise.opacity} />
         </EffectComposer>
       </Canvas>
     </main>

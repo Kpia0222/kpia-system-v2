@@ -2,176 +2,155 @@
 
 import { useRef, useState } from "react";
 import { useFrame } from "@react-three/fiber";
-import { Float, Html } from "@react-three/drei";
 import * as THREE from "three";
+import { Html } from "@react-three/drei";
+import { OBSERVER_BEACON_SETTINGS } from "@/config/environment-settings";
+
+// ============================================================================
+// ObserverBeacon - 共同探索ビーコン
+// ============================================================================
 
 interface ObserverBeaconProps {
+    /** ビーコン設置者のdisplayId */
+    userId: string;
+    /** 設置者からのメッセージ */
+    message?: string;
+    /** 3D空間での位置 */
     position: [number, number, number];
-    message: string;
-    ownerDisplayId: string;
+    /** ビーコンの色 (省略時は設定ファイルのデフォルト) */
+    color?: string;
+    /** クリック時のコールバック */
     onClick?: () => void;
 }
 
+const { geometry, material, light, animation } = OBSERVER_BEACON_SETTINGS;
+
 /**
- * ObserverBeacon - A glowing orange beacon left by visitors
- * Represents a message/marker placed in another user's universe
+ * ObserverBeacon - 他人の宇宙に配置されたメッセージを表示する発光クリスタル
+ * 
+ * 特徴:
+ * - 発光するクリスタル形状
+ * - ホバー時にメッセージ表示
+ * - パルスアニメーション
  */
 export function ObserverBeacon({
+    userId,
+    message = "Greetings from another universe...",
     position,
-    message,
-    ownerDisplayId,
-    onClick
+    color = material.defaultColor,
+    onClick,
 }: ObserverBeaconProps) {
-    const groupRef = useRef<THREE.Group>(null);
-    const glowRef = useRef<THREE.Mesh>(null);
+    const meshRef = useRef<THREE.Mesh>(null!);
+    const glowRef = useRef<THREE.Mesh>(null!);
     const [isHovered, setIsHovered] = useState(false);
-    const [showMessage, setShowMessage] = useState(false);
 
-    useFrame((state, delta) => {
-        if (groupRef.current) {
-            // Gentle rotation
-            groupRef.current.rotation.y += delta * 0.5;
-        }
+    // アニメーション
+    useFrame((state) => {
+        if (!meshRef.current) return;
+
+        const time = state.clock.elapsedTime;
+
+        // 浮遊アニメーション
+        meshRef.current.position.y = position[1] + Math.sin(time * animation.floatSpeed) * animation.floatAmplitude;
+
+        // 回転
+        meshRef.current.rotation.y += animation.rotationSpeed;
+
+        // グローのパルス
         if (glowRef.current) {
-            // Pulsing glow effect
-            const pulse = Math.sin(state.clock.elapsedTime * 3) * 0.3 + 1;
+            const pulse = 0.8 + Math.sin(time * animation.pulseSpeed) * animation.pulseAmplitude;
             glowRef.current.scale.setScalar(pulse);
         }
     });
 
-    const handleClick = () => {
-        setShowMessage(!showMessage);
-        onClick?.();
-    };
-
     return (
-        <Float speed={2} rotationIntensity={0.3} floatIntensity={0.5}>
-            <group
-                ref={groupRef}
-                position={position}
-                onClick={handleClick}
-                onPointerOver={() => setIsHovered(true)}
-                onPointerOut={() => setIsHovered(false)}
+        <group position={position}>
+            {/* グロー (外側の発光) */}
+            <mesh ref={glowRef} scale={geometry.glowScale}>
+                <octahedronGeometry args={[geometry.glowSize, 0]} />
+                <meshBasicMaterial
+                    color={color}
+                    transparent
+                    opacity={material.glowOpacity}
+                    side={THREE.BackSide}
+                />
+            </mesh>
+
+            {/* メインクリスタル */}
+            <mesh
+                ref={meshRef}
+                onPointerEnter={() => setIsHovered(true)}
+                onPointerLeave={() => setIsHovered(false)}
+                onClick={onClick}
             >
-                {/* Core Crystal */}
-                <mesh>
-                    <octahedronGeometry args={[0.5, 0]} />
-                    <meshPhysicalMaterial
-                        color="#ff8800"
-                        emissive="#ff8800"
-                        emissiveIntensity={isHovered ? 2 : 1}
-                        transparent
-                        opacity={0.9}
-                        roughness={0.1}
-                        metalness={0.8}
-                        envMapIntensity={1}
-                    />
-                </mesh>
+                <octahedronGeometry args={[geometry.size, 0]} />
+                <meshPhysicalMaterial
+                    color={color}
+                    emissive={color}
+                    emissiveIntensity={isHovered ? material.emissiveIntensityHover : material.emissiveIntensity}
+                    metalness={material.metalness}
+                    roughness={material.roughness}
+                    transmission={material.transmission}
+                    thickness={material.thickness}
+                    iridescence={material.iridescence}
+                    iridescenceIOR={material.iridescenceIOR}
+                    transparent
+                    opacity={material.opacity}
+                />
+            </mesh>
 
-                {/* Inner Glow */}
-                <mesh ref={glowRef}>
-                    <sphereGeometry args={[0.8, 16, 16]} />
-                    <meshBasicMaterial
-                        color="#ff8800"
-                        transparent
-                        opacity={0.15}
-                        side={THREE.BackSide}
-                    />
-                </mesh>
+            {/* 中心の光源 */}
+            <pointLight
+                color={color}
+                intensity={isHovered ? light.intensityHover : light.intensity}
+                distance={light.distance}
+            />
 
-                {/* Outer Glow Ring */}
-                <mesh rotation={[Math.PI / 2, 0, 0]}>
-                    <torusGeometry args={[1, 0.02, 8, 32]} />
-                    <meshBasicMaterial
-                        color="#ff8800"
-                        transparent
-                        opacity={isHovered ? 0.8 : 0.4}
-                    />
-                </mesh>
-
-                {/* Vertical Beam */}
-                <mesh>
-                    <cylinderGeometry args={[0.02, 0.02, 4, 8]} />
-                    <meshBasicMaterial
-                        color="#ff8800"
-                        transparent
-                        opacity={0.3}
-                    />
-                </mesh>
-
-                {/* Owner ID Label (always visible) */}
-                <Html
-                    position={[0, 1.5, 0]}
-                    center
-                    style={{
-                        pointerEvents: "none",
-                        userSelect: "none",
-                    }}
-                >
-                    <div className="font-mono text-[10px] text-[#ff8800] tracking-widest whitespace-nowrap opacity-70">
-                        BEACON // {ownerDisplayId}
+            {/* ホバー時のメッセージ表示 */}
+            {isHovered && (
+                <Html center position={[0, 3, 0]} style={{ pointerEvents: 'none' }}>
+                    <div className="bg-black/80 backdrop-blur-md border border-[#ff8800]/50 px-4 py-3 rounded min-w-[200px]">
+                        <div className="font-mono text-xs text-[#ff8800] tracking-widest mb-2">
+                            OBSERVER // {userId}
+                        </div>
+                        <div className="font-mono text-sm text-white/90">
+                            "{message}"
+                        </div>
+                        <div className="h-[1px] w-full bg-[#ff8800]/30 mt-2" />
+                        <div className="font-mono text-[10px] text-white/50 mt-1 tracking-wider">
+                            CLICK TO INTERACT
+                        </div>
                     </div>
                 </Html>
-
-                {/* Message Popup (on click) */}
-                {showMessage && (
-                    <Html
-                        position={[0, 2.5, 0]}
-                        center
-                        style={{
-                            pointerEvents: "auto",
-                        }}
-                    >
-                        <div
-                            className="bg-black/90 border border-[#ff8800] p-3 font-mono text-sm text-white max-w-[200px]"
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            <div className="text-[#ff8800] text-[10px] tracking-widest mb-2 border-b border-[#ff8800]/30 pb-1">
-                                MESSAGE
-                            </div>
-                            <div className="text-white text-xs leading-relaxed">
-                                {message}
-                            </div>
-                            <button
-                                onClick={() => setShowMessage(false)}
-                                className="mt-2 w-full py-1 border border-[#ff8800]/50 text-[#ff8800] text-[10px] hover:bg-[#ff8800] hover:text-black transition-all"
-                            >
-                                CLOSE
-                            </button>
-                        </div>
-                    </Html>
-                )}
-            </group>
-        </Float>
+            )}
+        </group>
     );
 }
 
 /**
- * BeaconPlacer - Component for placing new beacons
- * Used when visiting another user's universe
+ * BeaconCluster - 複数のビーコンをまとめて表示
  */
-interface BeaconPlacerProps {
-    onPlace: (position: [number, number, number], message: string) => void;
-    isActive: boolean;
+interface BeaconData {
+    id: string;
+    userId: string;
+    message: string;
+    position: [number, number, number];
+    color?: string;
 }
 
-export function BeaconPlacer({ onPlace, isActive }: BeaconPlacerProps) {
-    const [placerPosition, setPlacerPosition] = useState<[number, number, number]>([0, 0, 0]);
-
-    if (!isActive) return null;
-
+export function BeaconCluster({ beacons }: { beacons: BeaconData[] }) {
     return (
-        <group position={placerPosition}>
-            {/* Ghost beacon preview */}
-            <mesh>
-                <octahedronGeometry args={[0.5, 0]} />
-                <meshBasicMaterial
-                    color="#ff8800"
-                    transparent
-                    opacity={0.3}
-                    wireframe
+        <group>
+            {beacons.map((beacon) => (
+                <ObserverBeacon
+                    key={beacon.id}
+                    userId={beacon.userId}
+                    message={beacon.message}
+                    position={beacon.position}
+                    color={beacon.color}
                 />
-            </mesh>
+            ))}
         </group>
     );
 }
+

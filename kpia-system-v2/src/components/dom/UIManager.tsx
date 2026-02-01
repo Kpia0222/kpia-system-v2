@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useStore } from "@/store/useStore";
 import { TRANSITION_DURATIONS } from "@/config/system-settings";
+import { STARTUP_TRANSITION } from "@/config/camera-settings";
 import { UI_STRINGS, KEYBOARD_HINTS } from "@/config/ui-strings";
 import { galaxies } from "@/components/canvas/_scenes/KpiaUniverse";
 
@@ -14,6 +15,7 @@ import { GalaxyEntryCutIn } from "@/components/dom/overlays/GalaxyEntryCutIn";
 import { RealtimeToast } from "@/components/dom/overlays/RealtimeToast";
 import { SocialMenu } from "@/components/dom/overlays/SocialMenu";
 import { TransitionOverlay } from "@/components/canvas/effects/TransitionOverlay";
+import { TransitionTextOverlay } from "@/components/dom/overlays/TransitionTextOverlay";
 import { ScanlineEffect } from "@/components/dom/effects/ScanlineEffect";
 
 // Menus
@@ -82,11 +84,16 @@ export function UIManager() {
                 )}
             </AnimatePresence>
 
-            {/* ===== TRANSITION OVERLAY ===== */}
-            <TransitionOverlay
-                active={isStartupTransition}
-                duration={TRANSITION_DURATIONS.sceneTransition}
-            />
+            {/* ===== TRANSITION TEXT OVERLAY (TIPS + テキスト演出) ===== */}
+            <TransitionTextOverlay active={isStartupTransition} />
+
+            {/* ===== TRANSITION OVERLAY (ポリへドラ流れ) ===== */}
+            {STARTUP_TRANSITION.showOverlay && (
+                <TransitionOverlay
+                    active={isStartupTransition}
+                    duration={STARTUP_TRANSITION.totalDuration}
+                />
+            )}
 
             {/* ===== MENUS ===== */}
             <UniversalMenu />

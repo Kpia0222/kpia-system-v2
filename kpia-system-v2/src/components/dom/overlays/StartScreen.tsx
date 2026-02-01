@@ -18,7 +18,7 @@ export function StartScreen({ onStartSystem, isTransitioning = false }: StartScr
     const [isTypingComplete, setIsTypingComplete] = useState(false);
     const [authNotification, setAuthNotification] = useState<string | null>(null);
 
-    const { user, openMenu, resetState, lastPosition, executeSceneTransition, setLoading } = useStore();
+    const { user, openMenu, resetState } = useStore();
     const supabase = createClient();
 
     // Greeting notification on login
@@ -32,6 +32,8 @@ export function StartScreen({ onStartSystem, isTransitioning = false }: StartScr
 
     // Handle Start Logic (Resume vs New)
     const handleStart = () => {
+        // Resume logic disabled to always show startup transition
+        /*
         if (lastPosition && lastPosition.scene !== 'start') {
             // Resume from last position
             console.log("Resuming from last position:", lastPosition);
@@ -48,6 +50,8 @@ export function StartScreen({ onStartSystem, isTransitioning = false }: StartScr
             // Standard Start
             onStartSystem();
         }
+        */
+        onStartSystem();
     };
 
     const handleLogout = async () => {
@@ -168,7 +172,7 @@ export function StartScreen({ onStartSystem, isTransitioning = false }: StartScr
                 className="group relative z-10 flex flex-col items-center py-4 cursor-pointer"
             >
                 <div className={`flex items-center font-mono text-xl font-bold tracking-[0.3em] transition-colors duration-300 ${isHovered ? 'text-[#ff8800]' : 'text-white'}`}>
-                    {lastPosition && lastPosition.scene !== 'start' ? 'RESUME SYSTEM' : UI_STRINGS.ACTIONS.PRESS_START}
+                    {UI_STRINGS.ACTIONS.PRESS_START}
                     <motion.span
                         animate={{ opacity: [0, 1, 0] }}
                         transition={{ repeat: Infinity, duration: 0.8 }}

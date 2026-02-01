@@ -39,6 +39,19 @@ interface AppState {
     isSocialOpen: boolean
     isMuted: boolean
 
+    // 演出同期用フラグ
+    showStartupText: boolean
+    showStartupTips: boolean
+
+    // フェード時間設定 (秒)
+    fadeSettings: {
+        textIn: number
+        textOut: number
+        tipsIn: number
+        tipsOut: number
+    }
+
+
     // 訪問モード（他ユーザーの宇宙を観測中）
     isVisitingMode: boolean
     visitingUserId: string | null
@@ -83,6 +96,9 @@ interface AppState {
     setLoading: (value: boolean, text?: string) => void
     setDiving: (value: boolean) => void
     setAwakening: (value: boolean) => void
+    setStartupText: (value: boolean) => void
+    setStartupTips: (value: boolean) => void
+    setFadeSettings: (settings: { textIn: number, textOut: number, tipsIn: number, tipsOut: number }) => void
     setStartupTransition: (value: boolean) => void
     setInitialDive: (value: boolean) => void
     setHoveredGalaxy: (id: string | null) => void
@@ -144,6 +160,11 @@ export const useStore = create<AppState>((set, get) => ({
     isSocialOpen: false,
     isMuted: false,
 
+    // 演出同期用フラグ初期値
+    showStartupText: false,
+    showStartupTips: false,
+    fadeSettings: { textIn: 1.0, textOut: 1.0, tipsIn: 1.0, tipsOut: 1.0 },
+
     // 訪問モード初期状態
     isVisitingMode: false,
     visitingUserId: null,
@@ -163,7 +184,10 @@ export const useStore = create<AppState>((set, get) => ({
     setLoading: (value, text = '') => set({ isLoading: value, loadingText: text }),
     setDiving: (value) => set({ isDiving: value }),
     setAwakening: (value) => set({ isAwakening: value }),
-    setStartupTransition: (value) => set({ isStartupTransition: value }),
+    setStartupText: (value) => set({ showStartupText: value }),
+    setStartupTips: (value) => set({ showStartupTips: value }),
+    setFadeSettings: (settings) => set({ fadeSettings: settings }),
+    setStartupTransition: (value) => set({ showStartupText: false, showStartupTips: false, isStartupTransition: value }),
     setInitialDive: (value) => set({ isInitialDive: value }),
     setHoveredGalaxy: (id) => set({ hoveredGalaxyId: id }),
     setSelectedGalaxy: (id) => set({ selectedGalaxyId: id }),
