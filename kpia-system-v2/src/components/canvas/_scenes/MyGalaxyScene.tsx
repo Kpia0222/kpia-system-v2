@@ -3,8 +3,7 @@
 import { useState, RefObject } from "react";
 import { CameraControls, Float } from "@react-three/drei";
 import { DnaModel } from "@/components/canvas/objects/DnaModel";
-import { MeteorEnvironment } from "@/components/canvas/environments/MeteorEnvironment";
-import { METEOR_DEFAULTS, MYSTIC_GLASS_PLACEMENT, DUMMY_BEACONS } from "@/config/environment-settings";
+import { MYSTIC_GLASS_PLACEMENT, DUMMY_BEACONS } from "@/config/environment-settings";
 import { FloatingFragments } from "@/components/canvas/objects/FloatingFragments";
 import { MysticGlass } from "@/components/canvas/objects/MysticGlass";
 import { BeaconCluster } from "@/components/canvas/objects/ObserverBeacon";
@@ -57,15 +56,6 @@ export function MyGalaxyScene({
 
             {/* Observer Beacons - 他の探索者からのビーコン */}
             <BeaconCluster beacons={DUMMY_BEACONS} />
-
-            {/* Meteor Environment (Kuiper Belt Ring) */}
-            <MeteorEnvironment
-                minRadius={METEOR_DEFAULTS.minRadius}
-                maxRadius={METEOR_DEFAULTS.maxRadius}
-                count={METEOR_DEFAULTS.count}
-                color={METEOR_DEFAULTS.color}
-                shapeType={METEOR_DEFAULTS.shapeType}
-            />
         </group>
     );
 }

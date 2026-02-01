@@ -457,7 +457,7 @@ export function GalaxyInterior({ galaxy, onBack }: { galaxy: GalaxyData, onBack:
             <MeteorEnvironment
                 minRadius={300}
                 maxRadius={400}
-                count={500} // Massive density
+                count={3000} // Massive density
                 color={galaxy.meteorConfig?.color || themeColor}
                 shapeType={galaxy.meteorConfig?.shapeType || 'octahedron'}
             />

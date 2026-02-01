@@ -7,8 +7,10 @@ import * as THREE from "three";
 
 // 銀河データを設定ファイルからインポート
 import { GalaxyType, GalaxyData, galaxies } from "@/config/galaxy-data";
-import { GALAXY_CLUSTER_SETTINGS } from "@/config/environment-settings";
+import { GALAXY_CLUSTER_SETTINGS, METEOR_DEFAULTS } from "@/config/environment-settings";
 import { UI_COLORS } from "@/config/system-settings";
+
+import { MeteorEnvironment } from "@/components/canvas/environments/MeteorEnvironment";
 
 // 型定義を再エクスポート（後方互換性のため）
 export type { GalaxyType, GalaxyData };
@@ -16,7 +18,6 @@ export { galaxies };
 
 // ----------------------------------------------------------------------
 // GLSL Noise Functions (for Injection)
-// ----------------------------------------------------------------------
 const noiseGLSL = `
     // 3D Simplex Noise
     vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
@@ -256,6 +257,44 @@ export function KpiaUniverse({
             {/* Background elements to avoid void */}
             <color attach="background" args={[UI_COLORS.background]} />
 
+            {/* Milky Way Galaxy Background */}
+            <MeteorEnvironment
+                count={METEOR_DEFAULTS.count}
+                minRadius={METEOR_DEFAULTS.minRadius}
+                maxRadius={METEOR_DEFAULTS.maxRadius}
+                color={METEOR_DEFAULTS.color}
+            />
+
+            {/* Additional Decorative Galaxies */}
+            <group position={[2500, 500, -4000]} rotation={[Math.PI / 4, Math.PI / 6, 0]} scale={4}>
+                <MeteorEnvironment
+                    count={5000}
+                    minRadius={50}
+                    maxRadius={150}
+                    color="#ff8800" // Orange
+                    shapeType="octahedron"
+                />
+            </group>
+
+            <group position={[-5000, -1000, -2000]} rotation={[0, -Math.PI / 3, Math.PI / 6]} scale={3.5}>
+                <MeteorEnvironment
+                    count={5000}
+                    minRadius={50}
+                    maxRadius={150}
+                    color="#aa00ff" // Purple
+                    shapeType="box"
+                />
+            </group>
+
+            <group position={[0, 1500, 5000]} rotation={[-Math.PI / 6, 0, Math.PI / 2]} scale={5}>
+                <MeteorEnvironment
+                    count={5000}
+                    minRadius={50}
+                    maxRadius={150}
+                    color="#00ffcc" // Teal
+                    shapeType="tetrahedron"
+                />
+            </group>
 
             {galaxies.map((galaxy) => (
                 <Float key={galaxy.id} speed={galaxy.type === 'chaos' ? 2 : 1} rotationIntensity={0.5} floatIntensity={0.5}>

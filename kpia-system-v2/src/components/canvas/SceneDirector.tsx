@@ -1,7 +1,9 @@
 "use client";
 
-import { useRef } from "react";
-import { Sparkles, CameraControls } from "@react-three/drei";
+import { useRef, useEffect } from "react";
+import { CameraControls } from "@react-three/drei";
+import { useThree } from "@react-three/fiber";
+import { StarDust } from "@/components/canvas/environments/StarDust";
 import { useStore } from "@/store/useStore";
 import { UI_COLORS, TRANSITION_DURATIONS } from "@/config/system-settings";
 import {
@@ -9,7 +11,6 @@ import {
     STARTUP_LOOK_AT,
     CAMERA_CONSTRAINTS,
 } from "@/config/camera-settings";
-import { useEffect } from "react";
 import { useStartupSequence } from "@/hooks/useStartupSequence";
 
 // Scene Components
@@ -49,6 +50,13 @@ export function SceneDirector() {
         setStartupTransition,
     } = useStore();
 
+    // Force update camera far clipping plane to ensure distant stars are visible
+    const { camera } = useThree();
+    useEffect(() => {
+        camera.far = 10000;
+        camera.updateProjectionMatrix();
+    }, [camera]);
+
     // Derived galaxy data
     const hoveredGalaxy = galaxies.find(g => g.id === hoveredGalaxyId) ?? null;
     const selectedGalaxy = galaxies.find(g => g.id === selectedGalaxyId) ?? null;
@@ -84,11 +92,6 @@ export function SceneDirector() {
     // ========================================
     // Startup Transition Animation (Start → MyGalaxy)
     // ========================================
-
-    // ========================================
-    // Startup Transition Animation (Start → MyGalaxy)
-    // Managed by custom hook
-    // ========================================
     useStartupSequence(controlsRef);
 
 
@@ -112,119 +115,102 @@ export function SceneDirector() {
         }
     }, [currentScene]);
 
-    // ========================================
-    // Start Scene
-    // ========================================
-    if (currentScene === 'start') {
-        return (
-            <>
-                <CameraControls
-                    ref={controlsRef}
-                    makeDefault
-                    minDistance={CAMERA_CONSTRAINTS.start.minDistance}
-                    maxDistance={CAMERA_CONSTRAINTS.start.maxDistance}
-                    smoothTime={CAMERA_CONSTRAINTS.start.smoothTime}
-                    enabled={CAMERA_CONSTRAINTS.start.enabled}
-                />
-                <group position={[-150, 0, 0]} rotation={[0, 0, Math.PI / 8]}>
-                    <MyGalaxyScene
-                        controlsRef={controlsRef}
-                        mode="decorative"
-                        isDiving={isInitialDive}
+    return (
+        <>
+            {/* ======================================== */}
+            {/* Global Dust (Always Visible)             */}
+            {/* ======================================== */}
+            <StarDust
+                count={30000}       // Massive count
+                radius={7000}       // Covers universe
+                size={10}          // Slightly larger but fainter
+                speed={0}        // Gentle drift
+                opacity={0.1}       // Much lower opacity for subtle effect
+                color="#FFFFFF"     // Pure white
+            />
+
+            {/* ======================================== */}
+            {/* Start Scene                              */}
+            {/* ======================================== */}
+            {currentScene === 'start' && (
+                <>
+                    <CameraControls
+                        ref={controlsRef}
+                        makeDefault
+                        minDistance={CAMERA_CONSTRAINTS.start.minDistance}
+                        maxDistance={CAMERA_CONSTRAINTS.start.maxDistance}
+                        smoothTime={CAMERA_CONSTRAINTS.start.smoothTime}
+                        enabled={CAMERA_CONSTRAINTS.start.enabled}
                     />
-                    <Sparkles
-                        count={200}
-                        scale={400}
-                        size={2}
-                        speed={0.4}
-                        opacity={0.3}
-                        color={UI_COLORS.primary}
+                    <group position={[-150, 0, 0]} rotation={[0, 0, Math.PI / 8]}>
+                        <MyGalaxyScene
+                            controlsRef={controlsRef}
+                            mode="decorative"
+                            isDiving={isInitialDive}
+                        />
+                        {/* Local Sparkles removed in favor of Global Dust */}
+                    </group>
+                    <StartScreenDecorations isTransitioning={isStartupTransition} />
+                </>
+            )}
+
+            {/* ======================================== */}
+            {/* My Galaxy Scene                          */}
+            {/* ======================================== */}
+            {currentScene === 'my_galaxy' && (
+                <>
+                    <CameraControls
+                        ref={controlsRef}
+                        makeDefault
+                        enabled={!isStartupTransition}
+                        minDistance={CAMERA_CONSTRAINTS.myGalaxy.minDistance}
+                        maxDistance={CAMERA_CONSTRAINTS.myGalaxy.maxDistance}
+                        smoothTime={isDiving ? CAMERA_CONSTRAINTS.myGalaxy.smoothTime.diving : CAMERA_CONSTRAINTS.myGalaxy.smoothTime.default}
                     />
-                </group>
-                <StartScreenDecorations isTransitioning={isStartupTransition} />
-            </>
-        );
-    }
+                    <MyGalaxyScene controlsRef={controlsRef} isDiving={isDiving} />
+                    <KuiperBelt />
+                </>
+            )}
 
-    // ========================================
-    // My Galaxy Scene
-    // ========================================
-    if (currentScene === 'my_galaxy') {
-        return (
-            <>
-                <CameraControls
-                    ref={controlsRef}
-                    makeDefault
-                    enabled={!isStartupTransition}
-                    minDistance={CAMERA_CONSTRAINTS.myGalaxy.minDistance}
-                    maxDistance={CAMERA_CONSTRAINTS.myGalaxy.maxDistance}
-                    smoothTime={isDiving ? CAMERA_CONSTRAINTS.myGalaxy.smoothTime.diving : CAMERA_CONSTRAINTS.myGalaxy.smoothTime.default}
-                />
-                <MyGalaxyScene controlsRef={controlsRef} isDiving={isDiving} />
-                <KuiperBelt />
-                <Sparkles
-                    count={500}
-                    scale={800}
-                    size={2}
-                    speed={0.2}
-                    opacity={0.5}
-                    color={UI_COLORS.primary}
-                />
-            </>
-        );
-    }
+            {/* ======================================== */}
+            {/* Universe Scene                           */}
+            {/* ======================================== */}
+            {currentScene === 'universe' && (
+                <>
+                    {/* Universe View */}
+                    {viewMode === 'universe' && !isTransitioning && (
+                        <>
+                            <CameraControls
+                                ref={universeControlsRef}
+                                minDistance={CAMERA_CONSTRAINTS.universe.minDistance}
+                                maxDistance={CAMERA_CONSTRAINTS.universe.maxDistance}
+                                smoothTime={CAMERA_CONSTRAINTS.universe.smoothTime}
+                            />
+                            <KpiaUniverse
+                                hoveredGalaxy={hoveredGalaxy}
+                                selectedGalaxy={selectedGalaxy}
+                                onHoverGalaxy={(g) => setHoveredGalaxy(g?.id ?? null)}
+                                onSelectGalaxy={(g) => setSelectedGalaxy(g?.id ?? null)}
+                                controlsRef={universeControlsRef}
+                            />
+                        </>
+                    )}
 
-    // ========================================
-    // Universe Scene
-    // ========================================
-    if (currentScene === 'universe') {
-        return (
-            <>
-                {/* Universal Sparkles */}
-                <Sparkles
-                    count={viewMode === 'universe' ? 5000 : 2000}
-                    scale={viewMode === 'universe' ? 1000 : 100}
-                    size={viewMode === 'universe' ? 0.5 : 1.5}
-                    speed={0.1}
-                    color={viewMode === 'galaxy' && selectedGalaxy ? '#ff8800' : '#ffffff'}
-                    opacity={0.2}
-                />
-
-                {/* Universe View */}
-                {viewMode === 'universe' && !isTransitioning && (
-                    <>
-                        <CameraControls
-                            ref={universeControlsRef}
-                            minDistance={CAMERA_CONSTRAINTS.universe.minDistance}
-                            maxDistance={CAMERA_CONSTRAINTS.universe.maxDistance}
-                            smoothTime={CAMERA_CONSTRAINTS.universe.smoothTime}
-                        />
-                        <KpiaUniverse
-                            hoveredGalaxy={hoveredGalaxy}
-                            selectedGalaxy={selectedGalaxy}
-                            onHoverGalaxy={(g) => setHoveredGalaxy(g?.id ?? null)}
-                            onSelectGalaxy={(g) => setSelectedGalaxy(g?.id ?? null)}
-                            controlsRef={universeControlsRef}
-                        />
-                    </>
-                )}
-
-                {/* Galaxy Interior View */}
-                {viewMode === 'galaxy' && !isTransitioning && selectedGalaxy && (
-                    <>
-                        <CameraControls
-                            ref={controlsRef}
-                            minDistance={CAMERA_CONSTRAINTS.galaxyInterior.minDistance}
-                            maxDistance={CAMERA_CONSTRAINTS.galaxyInterior.maxDistance}
-                            minPolarAngle={CAMERA_CONSTRAINTS.galaxyInterior.minPolarAngle}
-                            maxPolarAngle={CAMERA_CONSTRAINTS.galaxyInterior.maxPolarAngle}
-                        />
-                        <GalaxyInterior galaxy={selectedGalaxy} onBack={exitGalaxy} />
-                    </>
-                )}
-            </>
-        );
-    }
-
-    return null;
+                    {/* Galaxy Interior View */}
+                    {viewMode === 'galaxy' && !isTransitioning && selectedGalaxy && (
+                        <>
+                            <CameraControls
+                                ref={controlsRef}
+                                minDistance={CAMERA_CONSTRAINTS.galaxyInterior.minDistance}
+                                maxDistance={CAMERA_CONSTRAINTS.galaxyInterior.maxDistance}
+                                minPolarAngle={CAMERA_CONSTRAINTS.galaxyInterior.minPolarAngle}
+                                maxPolarAngle={CAMERA_CONSTRAINTS.galaxyInterior.maxPolarAngle}
+                            />
+                            <GalaxyInterior galaxy={selectedGalaxy} onBack={exitGalaxy} />
+                        </>
+                    )}
+                </>
+            )}
+        </>
+    );
 }

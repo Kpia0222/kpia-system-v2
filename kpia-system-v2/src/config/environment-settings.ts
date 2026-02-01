@@ -143,9 +143,9 @@ export const DUMMY_BEACONS = [
  * 隕石 (浮遊物体) のデフォルト設定
  */
 export const METEOR_DEFAULTS = {
-    count: 1000,                // 隕石の数
-    minRadius: 100,             // 最小配置半径
-    maxRadius: 650,             // 最大配置半径
+    count: 5000,                // 隕石の数 (超・高密度銀河用に増量)
+    minRadius: 50,              // 渦巻きの中心除外範囲
+    maxRadius: 800,             // 渦巻きの最大半径
     color: '#ffaa00',           // 基本カラー (オレンジ)
     shapeType: 'tetrahedron' as const, // 形状タイプ
     size: {

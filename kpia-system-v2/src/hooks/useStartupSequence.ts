@@ -21,38 +21,38 @@ export function useStartupSequence(controlsRef: React.RefObject<CameraControls |
 
     // LEVA Config (リアルタイム調整用)
     // SceneDirectorから移動
-    const transitionConfig = useControls('Startup Transition', {
-        Timing: folder({
-            totalDuration: { value: STARTUP_TRANSITION.totalDuration, min: 1000, max: 10000, step: 100 },
-            midpointRatio: { value: STARTUP_TRANSITION.midpointRatio, min: 0.1, max: 0.9, step: 0.1 },
-            cameraMoveDelay: { value: STARTUP_TRANSITION.cameraMoveDelay, min: 0, max: 2000, step: 50 },
-            awakeningDuration: { value: STARTUP_TRANSITION.awakeningDuration, min: 1000, max: 5000, step: 100 },
+    const transitionConfig = useControls('スタートアップ演出設定', {
+        '⏱️ タイミング設定': folder({
+            '全体所要時間 (ms)': { value: STARTUP_TRANSITION.totalDuration, min: 1000, max: 10000, step: 100 },
+            'シーン切替位置 (0-1)': { value: STARTUP_TRANSITION.midpointRatio, min: 0.1, max: 0.9, step: 0.1 },
+            '移動開始遅延 (ms)': { value: STARTUP_TRANSITION.cameraMoveDelay, min: 0, max: 2000, step: 50 },
+            '覚醒エフェクト時間 (ms)': { value: STARTUP_TRANSITION.awakeningDuration, min: 1000, max: 5000, step: 100 },
         }),
 
-        Camera: folder({
-            zoomMultiplier: { value: STARTUP_TRANSITION.zoomMultiplier, min: 0.1, max: 5, step: 0.1 },
-            animateZoomIn: { value: STARTUP_TRANSITION.animateZoomIn },
-            animateMoveToDefault: { value: STARTUP_TRANSITION.animateMoveToDefault },
-            lookAtX: { value: STARTUP_TRANSITION.lookAt.x, min: -100, max: 100 },
-            lookAtY: { value: STARTUP_TRANSITION.lookAt.y, min: -100, max: 100 },
-            lookAtZ: { value: STARTUP_TRANSITION.lookAt.z, min: -100, max: 100 },
+        '📷 カメラ制御': folder({
+            'ズーム倍率': { value: STARTUP_TRANSITION.zoomMultiplier, min: 0.1, max: 5, step: 0.1 },
+            'ズームインアニメーション': { value: STARTUP_TRANSITION.animateZoomIn },
+            'デフォルト位置移動アニメーション': { value: STARTUP_TRANSITION.animateMoveToDefault },
+            '注視点 X': { value: STARTUP_TRANSITION.lookAt.x, min: -100, max: 100 },
+            '注視点 Y': { value: STARTUP_TRANSITION.lookAt.y, min: -100, max: 100 },
+            '注視点 Z': { value: STARTUP_TRANSITION.lookAt.z, min: -100, max: 100 },
         }),
 
-        'Text Overlay': folder({
-            textShowStartRatio: { value: STARTUP_TRANSITION.textOverlay.showStartRatio, min: 0, max: 1, step: 0.05 },
-            textShowEndRatio: { value: STARTUP_TRANSITION.textOverlay.showEndRatio, min: 0, max: 1, step: 0.05 },
+        '💬 テキスト演出 (中央)': folder({
+            '開始タイミング (0-1) ': { value: STARTUP_TRANSITION.textOverlay.showStartRatio, min: 0, max: 1, step: 0.05 },
+            '終了タイミング (0-1) ': { value: STARTUP_TRANSITION.textOverlay.showEndRatio, min: 0, max: 1, step: 0.05 },
         }),
 
-        'Tips Overlay': folder({
-            tipsShowStartRatio: { value: (STARTUP_TRANSITION.textOverlay as any).tipsShowStartRatio ?? 0.1, min: 0, max: 1, step: 0.05 },
-            tipsShowEndRatio: { value: (STARTUP_TRANSITION.textOverlay as any).tipsShowEndRatio ?? 0.4, min: 0, max: 1, step: 0.05 },
+        '💡 Tips演出 (左上)': folder({
+            '開始タイミング (0-1)': { value: (STARTUP_TRANSITION.textOverlay as any).tipsShowStartRatio ?? 0.1, min: 0, max: 1, step: 0.05 },
+            '終了タイミング (0-1)': { value: (STARTUP_TRANSITION.textOverlay as any).tipsShowEndRatio ?? 0.4, min: 0, max: 1, step: 0.05 },
         }),
 
-        'Fade Settings': folder({
-            fadeTextIn: { value: 1.0, min: 0.1, max: 5.0, step: 0.1 },
-            fadeTextOut: { value: 0.5, min: 0.1, max: 5.0, step: 0.1 },
-            fadeTipsIn: { value: 1.0, min: 0.1, max: 5.0, step: 0.1 },
-            fadeTipsOut: { value: 0.5, min: 0.1, max: 5.0, step: 0.1 },
+        '🌫️ フェード時間詳細': folder({
+            'テキスト IN (秒)': { value: 1.0, min: 0.1, max: 5.0, step: 0.1 },
+            'テキスト OUT (秒)': { value: 0.5, min: 0.1, max: 5.0, step: 0.1 },
+            'Tips IN (秒)': { value: 1.0, min: 0.1, max: 5.0, step: 0.1 },
+            'Tips OUT (秒)': { value: 0.5, min: 0.1, max: 5.0, step: 0.1 },
         }),
     });
 
@@ -63,10 +63,10 @@ export function useStartupSequence(controlsRef: React.RefObject<CameraControls |
 
         // Sync fade settings to store
         setFadeSettings({
-            textIn: transitionConfig.fadeTextIn,
-            textOut: transitionConfig.fadeTextOut,
-            tipsIn: transitionConfig.fadeTipsIn,
-            tipsOut: transitionConfig.fadeTipsOut,
+            textIn: transitionConfig['テキスト IN (秒)'],
+            textOut: transitionConfig['テキスト OUT (秒)'],
+            tipsIn: transitionConfig['Tips IN (秒)'],
+            tipsOut: transitionConfig['Tips OUT (秒)'],
         });
     }, [transitionConfig, setFadeSettings]);
 
@@ -75,18 +75,18 @@ export function useStartupSequence(controlsRef: React.RefObject<CameraControls |
 
         const config = configRef.current;
         const {
-            totalDuration,
-            midpointRatio,
-            cameraMoveDelay,
-            awakeningDuration,
-            zoomMultiplier,
-            lookAtX, lookAtY, lookAtZ,
-            textShowStartRatio,
-            textShowEndRatio,
-            tipsShowStartRatio,
-            tipsShowEndRatio,
-            animateZoomIn,
-            animateMoveToDefault,
+            '全体所要時間 (ms)': totalDuration,
+            'シーン切替位置 (0-1)': midpointRatio,
+            '移動開始遅延 (ms)': cameraMoveDelay,
+            '覚醒エフェクト時間 (ms)': awakeningDuration,
+            'ズーム倍率': zoomMultiplier,
+            '注視点 X': lookAtX, '注視点 Y': lookAtY, '注視点 Z': lookAtZ,
+            '開始タイミング (0-1) ': textShowStartRatio,
+            '終了タイミング (0-1) ': textShowEndRatio,
+            '開始タイミング (0-1)': tipsShowStartRatio,
+            '終了タイミング (0-1)': tipsShowEndRatio,
+            'ズームインアニメーション': animateZoomIn,
+            'デフォルト位置移動アニメーション': animateMoveToDefault,
         } = config;
 
         // LookAt再構成

@@ -12,7 +12,7 @@
 export const CAMERA_PROPERTIES = {
     fov: 65,                    // 視野角（度）- 人間の視野に近い値
     near: 0.1,                  // 近クリップ面（ワールド単位）
-    far: 2000,                  // 遠クリップ面（ワールド単位）
+    far: 20000,                  // 遠クリップ面（ワールド単位）
 } as const;
 
 /**
@@ -171,8 +171,8 @@ export const CAMERA_CONSTRAINTS = {
      * 【動作】ズーム固定（minDistance === maxDistance）。
      */
     universe: {
-        minDistance: 1200,        // ズーム固定値
-        maxDistance: 1200,        // ズーム固定値（上と同じ）
+        minDistance: 1000,        // ズーム固定値
+        maxDistance: 8000,        // ズーム固定値（上と同じ）
         smoothTime: 0.3,          // 高速なカメラ反応
     },
 
