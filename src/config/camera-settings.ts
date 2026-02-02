@@ -143,7 +143,7 @@ export const CAMERA_CONSTRAINTS = {
      * 【動作】自動演出（ダイブアニメーション）のみ許可。
      */
     start: {
-        minDistance: 11,          // ズームイン限界（近くまで寄れる）
+        minDistance: 10,          // ズームイン限界（近くまで寄れる）
         maxDistance: 2000,        // ズームアウト限界（遠くまで離れられる）
         smoothTime: 1.5,          // ゆったりとしたカメラ移動（演出向け）
         enabled: false,           // ユーザー操作を無効化
