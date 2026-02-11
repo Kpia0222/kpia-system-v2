@@ -16,7 +16,7 @@ export function GalaxyPreview({ data, isHovered, isSelected }: GalaxyPreviewProp
 
     // Generate Spiral Geometry
     const geometry = useMemo(() => {
-        const particles = 2000;
+        const particles = 2001;
         const positions = new Float32Array(particles * 3);
         const colors = new Float32Array(particles * 3);
 
