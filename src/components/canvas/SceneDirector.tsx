@@ -1,215 +1,46 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef, useMemo } from "react";
 import { CameraControls } from "@react-three/drei";
-import { useThree } from "@react-three/fiber";
 import { StarDust } from "@/components/canvas/environments/StarDust";
 import { useStore } from "@/store/useStore";
-import { UI_COLORS, TRANSITION_DURATIONS } from "@/config/system-settings";
-import {
-    CAM_POS_START,
-    STARTUP_LOOK_AT,
-    CAMERA_CONSTRAINTS,
-} from "@/config/camera-settings";
+import { STARDUST_CONFIG } from "@/config/environment-settings";
 import { useStartupSequence } from "@/hooks/useStartupSequence";
+import { useInitialDiveSequence } from "@/hooks/useInitialDiveSequence"; // 新設フック
+import { strategies } from "@/components/canvas/strategies";
 
-// Scene Components
-import { KpiaUniverse, galaxies } from "@/components/canvas/_scenes/KpiaUniverse";
-import { GalaxyInterior } from "@/components/canvas/_scenes/GalaxyInterior";
-import { MyGalaxyScene } from "@/components/canvas/_scenes/MyGalaxyScene";
-import { StartScreenDecorations } from "@/components/canvas/environments/StartScreenDecorations";
-import { KuiperBelt } from "@/components/canvas/environments/KuiperBelt";
-
-// ============================================================================
-// SceneDirector - Manages 3D scene rendering and camera controls
-// ============================================================================
-
-/**
- * SceneDirector manages all 3D scene rendering based on currentScene and viewMode.
- * Also handles camera animation logic that was previously in page.tsx.
- */
+// 各シーンの描画ロジックは Strategy Pattern により各ファイルに委譲される
 export function SceneDirector() {
     const controlsRef = useRef<CameraControls>(null!);
-    const universeControlsRef = useRef<CameraControls>(null!);
+    const store = useStore();
+    const { currentScene } = store;
 
-    const {
-        currentScene,
-        viewMode,
-        isStartupTransition,
-        isInitialDive,
-        isDiving,
-        isTransitioning,
-        hoveredGalaxyId,
-        selectedGalaxyId,
-        setHoveredGalaxy,
-        setSelectedGalaxy,
-        exitGalaxy,
-        setInitialDive,
-        setCurrentScene,
-        setAwakening,
-        setStartupTransition,
-    } = useStore();
-
-    // Force update camera far clipping plane to ensure distant stars are visible
-    const { camera } = useThree();
-    useEffect(() => {
-        camera.far = 10000;
-        camera.updateProjectionMatrix();
-    }, [camera]);
-
-    // Derived galaxy data
-    const hoveredGalaxy = galaxies.find(g => g.id === hoveredGalaxyId) ?? null;
-    const selectedGalaxy = galaxies.find(g => g.id === selectedGalaxyId) ?? null;
-
-    // Leva Configuration
-
-
-    // ========================================
-    // Initial Dive Animation (Start Scene)
-    // ========================================
-    useEffect(() => {
-        if (currentScene !== 'start' || !isInitialDive || !controlsRef.current) return;
-
-        controlsRef.current.setLookAt(0, 0, STARTUP_LOOK_AT.z, 0, 0, 0, false);
-
-        const moveTimer = setTimeout(() => {
-            controlsRef.current?.setLookAt(
-                CAM_POS_START.x, CAM_POS_START.y, CAM_POS_START.z,
-                0, 0, 0, true
-            );
-        }, TRANSITION_DURATIONS.cameraMove);
-
-        const completeTimer = setTimeout(() => {
-            setInitialDive(false);
-        }, TRANSITION_DURATIONS.initialDive);
-
-        return () => {
-            clearTimeout(moveTimer);
-            clearTimeout(completeTimer);
-        };
-    }, [currentScene, isInitialDive, setInitialDive]);
-
-    // ========================================
-    // Startup Transition Animation (Start → MyGalaxy)
-    // ========================================
+    // 各種シーケンスロジックをフックに委譲（SceneDirectorを250行以下に保つ）
     useStartupSequence(controlsRef);
+    useInitialDiveSequence(controlsRef);
 
+    // 現在のシーンに応じたレンダリング戦略を選択
+    const currentStrategy = strategies[currentScene];
 
-    // ========================================
-    // Return to Start Scene Camera Reset
-    // ========================================
-    // 前のシーンを追跡（「スタート画面に戻った」ことを検出するため）
-    const prevSceneRef = useRef(currentScene);
-
-    useEffect(() => {
-        const prevScene = prevSceneRef.current;
-        prevSceneRef.current = currentScene;
-
-        // 「他のシーンからスタート画面に戻った」場合のみカメラをリセット
-        // 初回起動時（prevScene === 'start' && currentScene === 'start'）はスキップ
-        if (prevScene !== 'start' && currentScene === 'start' && controlsRef.current) {
-            controlsRef.current.setLookAt(
-                CAM_POS_START.x, CAM_POS_START.y, CAM_POS_START.z,
-                0, 0, 0, false
-            );
-        }
-    }, [currentScene]);
+    // カメラ設定の動的解決
+    const cameraConfig = useMemo(() => {
+        if (!currentStrategy) return {};
+        return currentStrategy.getCameraConfig(store);
+    }, [currentStrategy, store]);
 
     return (
         <>
-            {/* ======================================== */}
-            {/* Global Dust (Always Visible)             */}
-            {/* ======================================== */}
-            <StarDust
-                count={30000}       // Massive count
-                radius={7000}       // Covers universe
-                size={10}          // Slightly larger but fainter
-                speed={0}        // Gentle drift
-                opacity={0.1}       // Much lower opacity for subtle effect
-                color="#FFFFFF"     // Pure white
-            />
+            {/* 宇宙背景：設定値はすべて config から取得 */}
+            <StarDust {...STARDUST_CONFIG} />
 
-            {/* ======================================== */}
-            {/* Start Scene                              */}
-            {/* ======================================== */}
-            {currentScene === 'start' && (
-                <>
-                    <CameraControls
-                        ref={controlsRef}
-                        makeDefault
-                        minDistance={CAMERA_CONSTRAINTS.start.minDistance}
-                        maxDistance={CAMERA_CONSTRAINTS.start.maxDistance}
-                        smoothTime={CAMERA_CONSTRAINTS.start.smoothTime}
-                        enabled={CAMERA_CONSTRAINTS.start.enabled}
-                    />
-                    <group position={[-150, 0, 0]} rotation={[0, 0, Math.PI / 8]}>
-                        <MyGalaxyScene
-                            controlsRef={controlsRef}
-                            mode="decorative"
-                            isDiving={isInitialDive}
-                        />
-                        {/* Local Sparkles removed in favor of Global Dust */}
-                    </group>
-                    <StartScreenDecorations isTransitioning={isStartupTransition} />
-                </>
+            {/* カメラ制御：Strategyに基づいた動的プロパティ付与 */}
+            {currentStrategy && (
+                <CameraControls ref={controlsRef} {...cameraConfig} />
             )}
 
-            {/* ======================================== */}
-            {/* My Galaxy Scene                          */}
-            {/* ======================================== */}
-            {currentScene === 'my_galaxy' && (
-                <>
-                    <CameraControls
-                        ref={controlsRef}
-                        makeDefault
-                        enabled={!isStartupTransition}
-                        minDistance={CAMERA_CONSTRAINTS.myGalaxy.minDistance}
-                        maxDistance={CAMERA_CONSTRAINTS.myGalaxy.maxDistance}
-                        smoothTime={isDiving ? CAMERA_CONSTRAINTS.myGalaxy.smoothTime.diving : CAMERA_CONSTRAINTS.myGalaxy.smoothTime.default}
-                    />
-                    <MyGalaxyScene controlsRef={controlsRef} isDiving={isDiving} />
-                    <KuiperBelt />
-                </>
-            )}
-
-            {/* ======================================== */}
-            {/* Universe Scene                           */}
-            {/* ======================================== */}
-            {currentScene === 'universe' && (
-                <>
-                    {/* Universe View */}
-                    {viewMode === 'universe' && !isTransitioning && (
-                        <>
-                            <CameraControls
-                                ref={universeControlsRef}
-                                minDistance={CAMERA_CONSTRAINTS.universe.minDistance}
-                                maxDistance={CAMERA_CONSTRAINTS.universe.maxDistance}
-                                smoothTime={CAMERA_CONSTRAINTS.universe.smoothTime}
-                            />
-                            <KpiaUniverse
-                                hoveredGalaxy={hoveredGalaxy}
-                                selectedGalaxy={selectedGalaxy}
-                                onHoverGalaxy={(g) => setHoveredGalaxy(g?.id ?? null)}
-                                onSelectGalaxy={(g) => setSelectedGalaxy(g?.id ?? null)}
-                                controlsRef={universeControlsRef}
-                            />
-                        </>
-                    )}
-
-                    {/* Galaxy Interior View */}
-                    {viewMode === 'galaxy' && !isTransitioning && selectedGalaxy && (
-                        <>
-                            <CameraControls
-                                ref={controlsRef}
-                                minDistance={CAMERA_CONSTRAINTS.galaxyInterior.minDistance}
-                                maxDistance={CAMERA_CONSTRAINTS.galaxyInterior.maxDistance}
-                                minPolarAngle={CAMERA_CONSTRAINTS.galaxyInterior.minPolarAngle}
-                                maxPolarAngle={CAMERA_CONSTRAINTS.galaxyInterior.maxPolarAngle}
-                            />
-                            <GalaxyInterior galaxy={selectedGalaxy} onBack={exitGalaxy} />
-                        </>
-                    )}
-                </>
+            {/* シーン本体：コンポーネントとしての描画を委譲 */}
+            {currentStrategy && (
+                <currentStrategy.Component controlsRef={controlsRef} />
             )}
         </>
     );

@@ -16,10 +16,14 @@ export const ENVIRONMENT_LIGHTING = {
 // Post-Processing Effects (page.tsx で使用)
 // ============================================================================
 export const POST_PROCESSING = {
+    // レンダラー設定 (Experimental)
+    renderer: {
+        useWebGPU: false, // Default: WebGL (Stable)
+    },
     bloom: {
         luminanceThreshold: 0.1,     // 発光の閾値 (高いほど明るい部分のみ発光)
         luminanceSmoothing: 0.9,     // 発光の滑らかさ
-        intensity: 0.2,              // 発光の強さ
+        intensity: 0.01,              // 発光の強さ
     },
     noise: {
         opacity: 0.02,               // ノイズの不透明度
@@ -32,14 +36,14 @@ export const POST_PROCESSING = {
 export const MYSTIC_GLASS_MATERIAL = {
     transmission: 1.0,               // 透過度 (0=不透明, 1=完全透過)
     thickness: 1.0,                  // 屈折による重厚感
-    roughness: 0.02,                 // 表面の粗さ (0=鏡面, 1=マット)
+    roughness: 0.1,                 // 表面の粗さ (0=鏡面, 1=マット)
     chromaticAberration: 0.2,        // 虹色の色収差（端のにじみ）
-    iridescence: 5,                // 虹彩反射の強さ
+    iridescence: 1,                // 虹彩反射の強さ
     iridescenceIOR: 1.5,             // 虹彩の屈折率
     ior: 1.5,                        // ガラスの屈折率
     distortion: 0.15,                // 背景の歪み量
     anisotropy: 0.1,                 // 微細な方向性反射
-    samples: 8,                      // レンダリング品質 (高いほど綺麗だが重い)
+    samples: 20,                      // レンダリング品質 (高いほど綺麗だが重い)
 } as const;
 
 // ============================================================================
@@ -51,7 +55,7 @@ export const MYSTIC_GLASS_PLACEMENT = {
     float: {
         speed: 0.5,                    // 浮遊速度
         rotationIntensity: 1,        // 回転の強さ
-        floatIntensity: 10,           // 浮遊の強さ
+        floatIntensity: 3,           // 浮遊の強さ
     },
 } as const;
 
@@ -59,8 +63,8 @@ export const MYSTIC_GLASS_PLACEMENT = {
 // Mystic Glass Deformation Settings (うねうね変形)
 // ============================================================================
 export const MYSTIC_GLASS_DEFORMATION = {
-    amplitude: 0.15,                   // 波の振幅（大きいほど変形が大きい）
-    frequency: 2.0,                    // 波の周波数（大きいほど細かい波）
+    amplitude: 0.20,                   // 波の振幅（大きいほど変形が大きい）
+    frequency: 1,                    // 波の周波数（大きいほど細かい波）
     speed: 1.5,                        // アニメーション速度
 } as const;
 
@@ -204,3 +208,20 @@ export const GALAXY_CLUSTER_SETTINGS = {
         envMapIntensity: 2.0,
     }
 } as const;
+
+// ============================================================================
+// StarDust Settings (Background Stars)
+// ============================================================================
+export const STARDUST_CONFIG = {
+    count: 30000,       // Massive count
+    radius: 7000,       // Covers universe
+    size: 10,          // Slightly larger but fainter
+    speed: 0,        // Gentle drift
+    opacity: 0.1,       // Much lower opacity for subtle effect
+    color: "#FFFFFF",     // Pure white
+} as const;
+
+// ============================================================================
+// Global Camera Settings
+// ============================================================================
+export const CAMERA_FAR_LIMIT = 10000;
