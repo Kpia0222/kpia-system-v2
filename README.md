@@ -1,36 +1,63 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🛸 PROJECT SYSTEM PROMPT & ARCHITECTURE
 
-## Getting Started
+## 1. PROJECT OVERVIEW
 
-First, run the development server:
+このプロジェクトは、**「Vibe Coding（AI生成）」のスピード**と**「プロレベルの保守性・品質」**を両立させるための、Next.jsおよびR3F（React Three Fiber）を用いた高度な3D Webエクスペリエンスです。
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## 2. TECHNICAL STACK
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+AIは以下のスタックに基づいたコード生成を行ってください。
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+* **Framework:** Next.js (App Router)
+* **3D Engine:** React Three Fiber (R3F), Three.js, @react-three/drei
+* **Styling:** Tailwind CSS
+* **State Management:** Zustand
+* **Backend:** Supabase
+* **Infrastructure:** Vercel, GitHub
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+---
 
-## Learn More
+## 3. DIRECTORY MAP (Folder Rules)
 
-To learn more about Next.js, take a look at the following resources:
+コードの配置場所を厳格に守ってください。
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+* `src/components/canvas/`: **3D世界専用。** R3Fコンポーネント、3Dモデル、ライト、環境設定。
+* `src/components/dom/`: **2D UI専用。** Tailwind CSSで構築されるメニュー、HUD、オーバーレイ。
+* `src/config/`: **定数管理。** 座標、色、時間、設定値。**マジックナンバーの避難所。**
+* `src/hooks/`: **ロジック抽出。** 状態変化、計算、イベントリスナー。
+* `src/store/`: **グローバル状態。** Zustandによるストア定義。
+* `src/types/`: **型定義。** DBスキーマおよび共有インターフェース。
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## 4. CODING CONSTITUTION (開発憲法)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+すべてのAIアシスタント（Gems）が遵守すべき**絶対的なルール**です。
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### 🚨 RULE 01: マジックナンバーの禁止
+
+* コード内に数値を直接書き込まないこと（例: `position={[0, 5, 0]}` や `delay: 0.2` はNG）。
+* すべての数値は `src/config/` 内の定数ファイルからインポートする。
+* 新しい数値が必要な場合、AIは「どのconfigに何を追記すべきか」をまず提案すること。
+
+### 🚨 RULE 02: 250行の壁
+
+* 1ファイルの行数が **250行** を超える場合、即座に機能の切り出し（Component/Hooks化）を行う。
+* 3Dモデル（GLB）1つにつき、1つのtsxコンポーネントを維持する。
+
+### 🚨 RULE 03: 責任の分離
+
+* `Canvas` 要素の中に直接HTML要素を書かない。
+* 3DとDOMの連携は、Propsバケツリレーではなく **Zustandストア** を経由させる。
+
+### 🚨 RULE 04: 日本語解説の付与
+
+* 生成コードには、設計意図（Why）を含む日本語コメントを詳細に記述すること。
+
+---
+
+## 5. AI EXECUTION GUIDELINES (AIへの命令)
+
+1. **分析から開始:** ユーザーの依頼に対し、まず「どのファイルが影響を受け、どのルールが適用されるか」を箇条書きで回答せよ。
+2. **リファクタリング優先:** 新機能を追加する前に、既存コードの冗長性を排除するリファクタリング案があれば提示せよ。
+3. **整合性チェック:** コード生成後、上記の「開発憲法」に違反していないかセルフチェック結果を報告せよ。

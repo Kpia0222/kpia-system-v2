@@ -1,5 +1,3 @@
-"use client";
-
 import { useState, RefObject } from "react";
 import { CameraControls, Float } from "@react-three/drei";
 import { DnaModel } from "@/components/canvas/objects/DnaModel";
@@ -7,6 +5,7 @@ import { MYSTIC_GLASS_PLACEMENT, DUMMY_BEACONS } from "@/config/environment-sett
 import { FloatingFragments } from "@/components/canvas/objects/FloatingFragments";
 import { MysticGlass } from "@/components/canvas/objects/MysticGlass";
 import { BeaconCluster } from "@/components/canvas/objects/ObserverBeacon";
+import { useStore } from "@/store/useStore";
 
 
 // ============================================================================
@@ -24,8 +23,10 @@ interface MyGalaxySceneProps {
 export function MyGalaxyScene({
     controlsRef,
     mode = 'interactive',
-    isDiving = false
+    isDiving: isDivingProp,
 }: MyGalaxySceneProps) {
+    const isDivingStore = useStore((state) => state.isDiving);
+    const isDiving = isDivingProp !== undefined ? isDivingProp : isDivingStore;
     const [isHovered, setIsHovered] = useState(false);
 
     return (

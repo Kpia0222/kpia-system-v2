@@ -1,8 +1,8 @@
 import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Float, Sphere, Torus, Html, Text } from '@react-three/drei';
+import { Sphere, Torus } from '@react-three/drei';
 import * as THREE from 'three';
-import { GalaxyData } from '@/components/canvas/_scenes/KpiaUniverse';
+import { GalaxyData } from '@/components/canvas/scenes/KpiaUniverse';
 import { FloatingAsteroids } from '@/components/canvas/environments/FloatingAsteroids';
 import { MeteorEnvironment } from '@/components/canvas/environments/MeteorEnvironment';
 

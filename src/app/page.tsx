@@ -1,6 +1,8 @@
 "use client";
 
-import { Canvas } from "@react-three/fiber";
+import { useState } from "react";
+// import { Canvas } from "@react-three/fiber"; // Replaced by KpiaCanvas
+import { KpiaCanvas } from "@/components/canvas/KpiaCanvas";
 import { Environment } from "@react-three/drei";
 import { Leva } from "leva";
 import { EffectComposer, Bloom, Noise } from "@react-three/postprocessing";
@@ -28,6 +30,8 @@ export default function Home() {
   useAutoSave();
   useAuthSession();
 
+  const [isWebGPU, setIsWebGPU] = useState(false);
+
   return (
     <main className="h-screen w-full bg-black relative">
       {/* Development GUI - Draggable & Wider */}
@@ -37,7 +41,7 @@ export default function Home() {
       <UIManager />
 
       {/* 3D Canvas Layer - Camera settings from config */}
-      <Canvas
+      <KpiaCanvas
         shadows
         camera={{
           position: CAMERA_INITIAL_POSITION,
@@ -45,6 +49,7 @@ export default function Home() {
           near: CAMERA_PROPERTIES.near,
           far: CAMERA_PROPERTIES.far,
         }}
+        onRendererChange={setIsWebGPU}
       >
         <ambientLight intensity={ENVIRONMENT_LIGHTING.ambientIntensity} />
         <Environment
@@ -55,16 +60,18 @@ export default function Home() {
         {/* Scene Director handles all 3D scene rendering */}
         <SceneDirector />
 
-        {/* Post-processing effects */}
-        <EffectComposer>
-          <Bloom
-            luminanceThreshold={POST_PROCESSING.bloom.luminanceThreshold}
-            luminanceSmoothing={POST_PROCESSING.bloom.luminanceSmoothing}
-            intensity={POST_PROCESSING.bloom.intensity}
-          />
-          <Noise opacity={POST_PROCESSING.noise.opacity} />
-        </EffectComposer>
-      </Canvas>
+        {/* Post-processing effects (WebGL Only) */}
+        {!isWebGPU && (
+          <EffectComposer>
+            <Bloom
+              luminanceThreshold={POST_PROCESSING.bloom.luminanceThreshold}
+              luminanceSmoothing={POST_PROCESSING.bloom.luminanceSmoothing}
+              intensity={POST_PROCESSING.bloom.intensity}
+            />
+            <Noise opacity={POST_PROCESSING.noise.opacity} />
+          </EffectComposer>
+        )}
+      </KpiaCanvas>
     </main>
   );
 }

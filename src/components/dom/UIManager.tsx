@@ -6,7 +6,7 @@ import { useStore } from "@/store/useStore";
 import { TRANSITION_DURATIONS } from "@/config/system-settings";
 import { STARTUP_TRANSITION } from "@/config/camera-settings";
 import { UI_STRINGS, KEYBOARD_HINTS } from "@/config/ui-strings";
-import { galaxies } from "@/components/canvas/_scenes/KpiaUniverse";
+import { galaxies } from "@/components/canvas/scenes/KpiaUniverse";
 
 // Overlays
 import { StartScreen } from "@/components/dom/overlays/StartScreen";

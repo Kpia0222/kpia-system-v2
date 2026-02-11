@@ -1,12 +1,12 @@
 export const SHORTCUTS = {
     MENU: {
-        TOGGLE: ['u', 'U'],
+        TOGGLE: ['Escape'],
     },
     MAP: {
-        TOGGLE: ['m', 'M', 'F5'],
+        TOGGLE: ['F5'],
     },
     STATUS: {
-        TOGGLE: ['s', 'S', 'F4'],
+        TOGGLE: ['F4'],
     },
     NOTION: {
         TOGGLE: ['F3'],

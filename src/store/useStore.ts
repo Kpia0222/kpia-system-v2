@@ -9,7 +9,7 @@ export type SceneType = 'start' | 'universe' | 'my_galaxy'
 export type ViewMode = 'universe' | 'galaxy'
 export type DurationKeys = keyof typeof DURATIONS
 
-interface AppState {
+export interface AppState {
     // シーン状態
     currentScene: SceneType
     viewMode: ViewMode
