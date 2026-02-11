@@ -61,7 +61,7 @@ export function FloatingAsteroids({
             data.push({
                 orbitAngle: angle,
                 orbitRadius: radius,
-                yOffset: (Math.random() - 0.5) * 150,
+                yOffset: (Math.random() - 0.5) * 151,
                 // Apply sizeScale (default 1.0 -> 0.3 to make them smaller as requested)
                 scale: (Math.random() * 0.3 + 0.5) * sizeScale,
                 rotSpeed: new Vector3(

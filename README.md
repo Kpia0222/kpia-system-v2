@@ -1,63 +1,41 @@
-# 🛸 PROJECT SYSTEM PROMPT & ARCHITECTURE
+# 🌌 KPIA SYSTEM v2: Cosmic Experience
 
-## 1. PROJECT OVERVIEW
-
-このプロジェクトは、**「Vibe Coding（AI生成）」のスピード**と**「プロレベルの保守性・品質」**を両立させるための、Next.jsおよびR3F（React Three Fiber）を用いた高度な3D Webエクスペリエンスです。
-
-## 2. TECHNICAL STACK
-
-AIは以下のスタックに基づいたコード生成を行ってください。
-
-* **Framework:** Next.js (App Router)
-* **3D Engine:** React Three Fiber (R3F), Three.js, @react-three/drei
-* **Styling:** Tailwind CSS
-* **State Management:** Zustand
-* **Backend:** Supabase
-* **Infrastructure:** Vercel, GitHub
+KPIA SYSTEM v2へようこそ。このプロジェクトは、最新のWeb技術を駆使して構築された、没入型の3Dデジタル宇宙体験です。
 
 ---
 
-## 3. DIRECTORY MAP (Folder Rules)
+## 🧭 案内掲示板 (Visitor's Guide)
 
-コードの配置場所を厳格に守ってください。
+この場所は、単なるWebサイトではなく、進化し続ける「実験領域」です。初めて訪れた方は、以下のエリアを探索してみてください。
 
-* `src/components/canvas/`: **3D世界専用。** R3Fコンポーネント、3Dモデル、ライト、環境設定。
-* `src/components/dom/`: **2D UI専用。** Tailwind CSSで構築されるメニュー、HUD、オーバーレイ。
-* `src/config/`: **定数管理。** 座標、色、時間、設定値。**マジックナンバーの避難所。**
-* `src/hooks/`: **ロジック抽出。** 状態変化、計算、イベントリスナー。
-* `src/store/`: **グローバル状態。** Zustandによるストア定義。
-* `src/types/`: **型定義。** DBスキーマおよび共有インターフェース。
+### 🌀 1. DNA銀河 (Core Identity)
+生命の螺旋を象徴する、このシステムの心臓部です。微細な粒子が織りなす3Dアニメーションが、データの生命力を表現しています。
 
----
+### ☄️ 2. 流星群の領域 (Meteor Environment)
+静寂の中に、時折降り注ぐ光の粒子。WebGPUのパワーを活用した、滑らかで高精細なエフェクトを楽しむことができます。
 
-## 4. CODING CONSTITUTION (開発憲法)
-
-すべてのAIアシスタント（Gems）が遵守すべき**絶対的なルール**です。
-
-### 🚨 RULE 01: マジックナンバーの禁止
-
-* コード内に数値を直接書き込まないこと（例: `position={[0, 5, 0]}` や `delay: 0.2` はNG）。
-* すべての数値は `src/config/` 内の定数ファイルからインポートする。
-* 新しい数値が必要な場合、AIは「どのconfigに何を追記すべきか」をまず提案すること。
-
-### 🚨 RULE 02: 250行の壁
-
-* 1ファイルの行数が **250行** を超える場合、即座に機能の切り出し（Component/Hooks化）を行う。
-* 3Dモデル（GLB）1つにつき、1つのtsxコンポーネントを維持する。
-
-### 🚨 RULE 03: 責任の分離
-
-* `Canvas` 要素の中に直接HTML要素を書かない。
-* 3DとDOMの連携は、Propsバケツリレーではなく **Zustandストア** を経由させる。
-
-### 🚨 RULE 04: 日本語解説の付与
-
-* 生成コードには、設計意図（Why）を含む日本語コメントを詳細に記述すること。
+### 💎 3. 記憶の断片 (Memory Fragments)
+宙に浮くクリスタルたちは、このシステムに蓄積された音楽やデータの断片です。これらに触れることで、過去の記録にアクセスできます。
 
 ---
 
-## 5. AI EXECUTION GUIDELINES (AIへの命令)
+## 🛠️ 開発者・AIアシスタントの方へ
 
-1. **分析から開始:** ユーザーの依頼に対し、まず「どのファイルが影響を受け、どのルールが適用されるか」を箇条書きで回答せよ。
-2. **リファクタリング優先:** 新機能を追加する前に、既存コードの冗長性を排除するリファクタリング案があれば提示せよ。
-3. **整合性チェック:** コード生成後、上記の「開発憲法」に違反していないかセルフチェック結果を報告せよ。
+このプロジェクトの設計思想や、開発時に守るべき「開発憲法」については、以下のドキュメントを参照してください。
+
+- [📜 開発憲法 (Development Constitution)](./docs/DEVELOPMENT_CONSTITUTION.md)
+- [📖 Git/GitHub 使い方ガイド](./docs/GIT_GUIDE.md)
+
+---
+
+## 🚀 はじめかた
+
+### 開発環境の起動
+```bash
+npm install
+npm run dev
+```
+
+### 動作環境
+- **推奨ブラウザ:** Chrome / Edge (WebGPU対応版を推奨)
+- **テクノロジー:** Next.js, React Three Fiber, WebGPU, Supabase
