@@ -4,7 +4,6 @@ import { Sphere, Torus } from '@react-three/drei';
 import * as THREE from 'three';
 import { GalaxyData } from '@/components/canvas/scenes/KpiaUniverse';
 import { FloatingAsteroids } from '@/components/canvas/environments/FloatingAsteroids';
-import { MeteorEnvironment } from '@/components/canvas/environments/MeteorEnvironment';
 
 // --------------------------------------------------------------------------
 // Helper: Random generators
@@ -452,15 +451,6 @@ export function GalaxyInterior({ galaxy, onBack }: { galaxy: GalaxyData, onBack:
                     />
                 </group>
             ))}
-
-            {/* Meteor Environment (Kuiper Belt Ring) */}
-            <MeteorEnvironment
-                minRadius={300}
-                maxRadius={400}
-                count={3000} // Massive density
-                color={galaxy.meteorConfig?.color || themeColor}
-                shapeType={galaxy.meteorConfig?.shapeType || 'octahedron'}
-            />
 
             {/* Asteroid Belt (Outer) */}
             <FloatingAsteroids minRadius={350} maxRadius={450} count={100} />

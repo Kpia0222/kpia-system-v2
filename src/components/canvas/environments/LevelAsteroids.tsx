@@ -91,6 +91,6 @@ export function LevelAsteroids() {
     });
 
     return (
-        <instancedMesh ref={meshRef} args={[geometry, material, COUNT]} />
+        <instancedMesh ref={meshRef} args={[geometry, material, COUNT]} raycast={() => { }} />
     );
 }

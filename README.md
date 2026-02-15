@@ -21,9 +21,8 @@ KPIA SYSTEM v2へようこそ。このプロジェクトは、最新のWeb技術
 
 ## 🛠️ 開発者・AIアシスタントの方へ
 
-このプロジェクトの設計思想や、開発時に守るべき「開発憲法」については、以下のドキュメントを参照してください。
+このプロジェクトの設計思想や、Gitの使い方については、以下のドキュメントを参照してください。
 
-- [📜 開発憲法 (Development Constitution)](./docs/DEVELOPMENT_CONSTITUTION.md)
 - [📖 Git/GitHub 使い方ガイド](./docs/GIT_GUIDE.md)
 
 ---
@@ -36,6 +35,16 @@ npm install
 npm run dev
 ```
 
-### 動作環境
-- **推奨ブラウザ:** Chrome / Edge (WebGPU対応版を推奨)
-- **テクノロジー:** Next.js, React Three Fiber, WebGPU, Supabase
+### 動作環境・テクノロジー (Environment & Tech)
+
+このプロジェクトは、最新のグラフィックス技術と堅牢なフロントエンドアーキテクチャで構成されています。
+
+| カテゴリ | 使用技術 |
+| :--- | :--- |
+| **核心技術** | [Next.js v16](https://nextjs.org/), [TypeScript](https://www.typescriptlang.org/), [Zustand](https://zustand-demo.pmnd.rs/) |
+| **3D体験** | [React Three Fiber](https://docs.pmnd.rs/react-three-fiber/), [Three.js](https://threejs.org/), [WebGPU](https://gpuweb.github.io/gpuweb/) |
+| **UI/UX** | [Tailwind CSS v4](https://tailwindcss.com/), [Framer Motion](https://www.framer.com/motion/) |
+| **バックエンド** | [Supabase](https://supabase.com/) |
+
+
+詳細な技術構成、各ライブラリのバージョン、および設計指針については、[**📜 技術スタック詳細 (TECH_STACK.md)**](./docs/TECH_STACK.md) を参照してください。

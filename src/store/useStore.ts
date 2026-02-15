@@ -5,7 +5,7 @@ import { TRANSITION_DURATIONS as DURATIONS } from "@/config/system-settings";
 import { UI_STRINGS } from "@/config/ui-strings";
 import { MusicTrack, UserProfile } from "@/types/database";
 
-export type SceneType = 'start' | 'universe' | 'my_galaxy'
+export type SceneType = 'start' | 'universe' | 'my_galaxy' | 'skill'
 export type ViewMode = 'universe' | 'galaxy'
 export type DurationKeys = keyof typeof DURATIONS
 

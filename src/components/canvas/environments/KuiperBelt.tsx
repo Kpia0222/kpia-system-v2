@@ -12,7 +12,7 @@ export function KuiperBelt() {
 
     // Shared Material: Liquid Metal
     const material = useMemo(() => new MeshPhysicalMaterial({
-        color: "#ffffff",
+        color: "#ff88ff",
         metalness: 1.0,
         roughness: 0.1,
         clearcoat: 1.0,
@@ -84,7 +84,7 @@ export function KuiperBelt() {
 
     // Use first geometry as placeholder (will be overridden by matrix transforms)
     return (
-        <instancedMesh ref={meshRef} args={[undefined, undefined, COUNT]} material={material}>
+        <instancedMesh ref={meshRef} args={[undefined, undefined, COUNT]} material={material} raycast={() => { }}>
             <dodecahedronGeometry args={[1]} />
         </instancedMesh>
     );

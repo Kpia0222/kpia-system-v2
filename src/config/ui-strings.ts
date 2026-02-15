@@ -92,6 +92,7 @@ export const MENU_LABELS = {
         SOUND: "SOUND",
         HOME: "HOME",
         UNIVERSE: "UNIVERSE",
+        SKILL: "SKILL",
     }
 } as const;
 

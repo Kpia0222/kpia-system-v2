@@ -27,6 +27,7 @@ export const MAIN_MENU_BUTTONS: MenuButtonConfig[] = [
     { id: 'status', labelKey: 'STATUS', shortcut: 'F4' },
     { id: 'map', labelKey: 'MAP', shortcut: 'F5' },
     { id: 'social', labelKey: 'SOCIAL', shortcut: 'F6' },
+    { id: 'skill', labelKey: 'SKILL', shortcut: 'F7' },
 ];
 
 /**
@@ -43,7 +44,7 @@ export const SEPARATED_MENU_BUTTON: MenuButtonConfig = {
  */
 export const getMenuLabel = (
     config: MenuButtonConfig,
-    currentScene: 'start' | 'universe' | 'my_galaxy'
+    currentScene: 'start' | 'universe' | 'my_galaxy' | 'skill'
 ): string => {
     if (config.isDynamic && config.id === 'scene_toggle') {
         return currentScene === 'universe'

@@ -108,7 +108,7 @@ export function FloatingAsteroids({
     });
 
     return (
-        <instancedMesh ref={meshRef} args={[undefined, undefined, count]} material={material}>
+        <instancedMesh ref={meshRef} args={[undefined, undefined, count]} material={material} raycast={() => { }}>
             {type === 'poly' && <dodecahedronGeometry args={[1, 0]} />}
             {type === 'sphere' && <icosahedronGeometry args={[1, 1]} />}
             {type === 'shard' && <octahedronGeometry args={[1, 0]} />}

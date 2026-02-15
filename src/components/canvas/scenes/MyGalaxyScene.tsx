@@ -1,10 +1,10 @@
 import { useState, RefObject } from "react";
 import { CameraControls, Float } from "@react-three/drei";
-import { DnaModel } from "@/components/canvas/objects/DnaModel";
+import { DnaModel } from "@/components/canvas/objects";
 import { MYSTIC_GLASS_PLACEMENT, DUMMY_BEACONS } from "@/config/environment-settings";
-import { FloatingFragments } from "@/components/canvas/objects/FloatingFragments";
-import { MysticGlass } from "@/components/canvas/objects/MysticGlass";
-import { BeaconCluster } from "@/components/canvas/objects/ObserverBeacon";
+
+import { MysticGlass } from "@/components/canvas/objects";
+import { BeaconCluster } from "@/components/canvas/objects";
 import { useStore } from "@/store/useStore";
 
 
@@ -40,8 +40,7 @@ export function MyGalaxyScene({
                 onHoverChange={setIsHovered}
             />
 
-            {/* Floating Fragments (Drafts) */}
-            <FloatingFragments />
+
 
             {/* Mystic Glass - 極上のガラスオブジェクト */}
             <Float

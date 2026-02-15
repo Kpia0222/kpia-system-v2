@@ -171,7 +171,7 @@ export const CAMERA_CONSTRAINTS = {
      * 【動作】ズーム固定（minDistance === maxDistance）。
      */
     universe: {
-        minDistance: 1000,        // ズーム固定値
+        minDistance: 100,         // ズーム固定値解除：銀河寄れるように
         maxDistance: 8000,        // ズーム固定値（上と同じ）
         smoothTime: 0.3,          // 高速なカメラ反応
     },

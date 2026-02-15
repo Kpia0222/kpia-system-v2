@@ -12,7 +12,7 @@ interface MenuButton {
 }
 
 // Build main buttons from config (left-to-right order)
-const buildMainButtons = (currentScene: 'start' | 'universe' | 'my_galaxy'): MenuButton[] => {
+const buildMainButtons = (currentScene: 'start' | 'universe' | 'my_galaxy' | 'skill'): MenuButton[] => {
     return MAIN_MENU_BUTTONS.map(config => ({
         id: config.id,
         label: getMenuLabel(config, currentScene),
@@ -21,7 +21,7 @@ const buildMainButtons = (currentScene: 'start' | 'universe' | 'my_galaxy'): Men
 };
 
 // Build separated MENU button
-const buildMenuButton = (currentScene: 'start' | 'universe' | 'my_galaxy'): MenuButton => ({
+const buildMenuButton = (currentScene: 'start' | 'universe' | 'my_galaxy' | 'skill'): MenuButton => ({
     id: SEPARATED_MENU_BUTTON.id,
     label: getMenuLabel(SEPARATED_MENU_BUTTON, currentScene),
     shortcut: SEPARATED_MENU_BUTTON.shortcut,
@@ -123,6 +123,16 @@ const getIcon = (id: string, label?: string) => {
         case 'status': return <IconStatus />;
         case 'notion': return <IconNotion />;
         case 'sound': return <IconSound />;
+        case 'skill': return (
+            <g stroke="currentColor" strokeWidth="4" strokeLinecap="round" fill="none">
+                <circle cx="50" cy="50" r="25" />
+                <path d="M50 25 L50 75 M25 50 L75 50" />
+                <circle cx="50" cy="25" r="4" fill="currentColor" />
+                <circle cx="50" cy="75" r="4" fill="currentColor" />
+                <circle cx="25" cy="50" r="4" fill="currentColor" />
+                <circle cx="75" cy="50" r="4" fill="currentColor" />
+            </g>
+        );
         case 'scene_toggle': return label === MENU_LABELS.HUD.HOME ? <IconHome /> : <IconGalaxy />;
         default: return null;
     }
@@ -279,26 +289,24 @@ export function GameMenuHUD() {
             case 'notion': return () => openMenu('notion');
             case 'sound': return toggleMute;
             case 'scene_toggle': return handleSceneToggle;
+            case 'skill': return () => setCurrentScene('skill');
             default: return undefined;
         }
     };
 
     return (
-        <div className="fixed top-6 right-6 z-50 pointer-events-none flex flex-col items-end gap-6">
+        <div className="fixed top-6 left-6 z-50 pointer-events-none flex flex-col items-start gap-6">
 
-            {/* Left to Right: [GALAXY, SOUND, NOTION, STATUS, MAP, SOCIAL] | [MENU] */}
+            {/* Left to Right: [MENU] | [GALAXY, SOUND, NOTION, STATUS, MAP, SOCIAL] */}
             <div className="flex flex-row items-center gap-5">
-                {/* Main menu buttons (left side) */}
-                {mainButtons.map((button, index) => (
-                    <MenuButtonItem
-                        key={button.id}
-                        button={button}
-                        index={index}
-                        isVisible={isLoaded}
-                        onClick={getHandler(button.id)}
-                        isMuted={isMuted}
-                    />
-                ))}
+                {/* MENU button (leftmost) */}
+                <MenuButtonItem
+                    button={menuButton}
+                    index={0}
+                    isVisible={isLoaded}
+                    onClick={getHandler(menuButton.id)}
+                    isMuted={isMuted}
+                />
 
                 {/* Vertical Separator Line */}
                 <div
@@ -312,20 +320,23 @@ export function GameMenuHUD() {
                     }}
                 />
 
-                {/* Separated MENU button (right side) */}
-                <MenuButtonItem
-                    button={menuButton}
-                    index={mainButtons.length}
-                    isVisible={isLoaded}
-                    onClick={getHandler(menuButton.id)}
-                    isMuted={isMuted}
-                />
+                {/* Main menu buttons (right side) */}
+                {mainButtons.map((button, index) => (
+                    <MenuButtonItem
+                        key={button.id}
+                        button={button}
+                        index={index + 1}
+                        isVisible={isLoaded}
+                        onClick={getHandler(button.id)}
+                        isMuted={isMuted}
+                    />
+                ))}
             </div>
 
             {/* Decorative Corner */}
             <div
-                className="absolute -top-1 -right-1 w-4 h-4 border-t-2 border-r-2"
-                style={{ borderColor: "rgba(255,136,0,0.4)" }}
+                className="absolute -top-1 -left-1 w-4 h-4 border-t-2 border-l-2"
+                style={{ borderColor: "rgba(,136,0,0.4)" }} //左上の「の色
             />
         </div>
     );

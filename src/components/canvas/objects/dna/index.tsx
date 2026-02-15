@@ -1,14 +1,16 @@
 "use client";
 
-import { useMemo, useRef, useEffect, RefObject } from "react";
-import { useFrame } from "@react-three/fiber";
+import { useMemo, useRef, useEffect, useState, RefObject } from "react";
+import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { CameraControls, Html } from "@react-three/drei";
 import { AnimatePresence } from "framer-motion";
 import { useStore } from "@/store/useStore";
 import { DnaAnalysisInterface } from "@/components/dom/features/DnaAnalysisInterface";
-import { snoiseGLSL, bridgeVertexShader, bridgeFragmentShader } from "@/config/shaders";
-import { DNA_GEOMETRY, DNA_ANIMATION, DNA_COLORS } from "@/config/dna-settings";
+import { DNA_GEOMETRY, DNA_ANIMATION } from "@/config/dna-settings";
+import type { DnaStrandUniforms } from "@/utils/dna-tsl-materials";
+import { DnaStrands } from "./DnaStrands";
+import { CpuBridgeGroup, GpuBridgeGroup } from "./DnaBridges";
 
 // ============================================================================
 // DNA Configuration
@@ -37,17 +39,37 @@ export function DnaModel({
     onHoverChange,
 }: DNAProps) {
     const { isDnaMode, toggleDnaMode, setDnaMode } = useStore();
+    const { gl } = useThree();
+    const isWebGPU = gl.constructor.name === "WebGPURenderer";
 
     const groupRef = useRef<THREE.Group>(null);
     const bridgeMatRef = useRef<THREE.ShaderMaterial>(null);
 
     const HALF_HEIGHT = DNA_GEOMETRY.totalHeight / 2;
 
-    const uniformsRef = useRef({
+    const uniformsRef = useRef<DnaStrandUniforms>({
         uTime: { value: 0 },
         uMinY: { value: -HALF_HEIGHT },
         uMaxY: { value: HALF_HEIGHT },
     });
+
+    // --- WebGPU 用 TSL マテリアル (動的インポート) ---
+    const [tslStrandMat, setTslStrandMat] = useState<THREE.Material | null>(null);
+    const [tslBridgeResult, setTslBridgeResult] = useState<{
+        material: THREE.Material;
+        uniforms: { uTime: { value: number } };
+    } | null>(null);
+
+    useEffect(() => {
+        if (!isWebGPU) return;
+        let cancelled = false;
+        import("@/utils/dna-tsl-materials").then((mod) => {
+            if (cancelled) return;
+            setTslStrandMat(mod.createDnaStrandNodeMaterial(uniformsRef.current));
+            setTslBridgeResult(mod.createBridgeNodeMaterial(HALF_HEIGHT));
+        });
+        return () => { cancelled = true; };
+    }, [isWebGPU, HALF_HEIGHT]);
 
     const rotationSpeedRef = useRef(0.1);
     const targetRotationSpeed = useRef(0.1);
@@ -142,66 +164,18 @@ export function DnaModel({
         return { strandGeometry: [geo1, geo2], bridgesData: bridges };
     }, []);
 
-    // === Liquid Metal Shader ===
-    const onBeforeCompile = (shader: any) => {
-        shader.uniforms.uTime = uniformsRef.current.uTime;
-        shader.uniforms.uMinY = uniformsRef.current.uMinY;
-        shader.uniforms.uMaxY = uniformsRef.current.uMaxY;
-
-        shader.vertexShader = shader.vertexShader.replace(
-            '#include <common>',
-            `#include <common>
-            uniform float uTime;
-            uniform float uMinY;
-            uniform float uMaxY;
-            varying float vYProgress;
-            varying vec3 vWorldPos;
-            ${snoiseGLSL}`
-        );
-
-        shader.vertexShader = shader.vertexShader.replace(
-            '#include <begin_vertex>',
-            `#include <begin_vertex>
-            float n = snoise(transformed * 0.05 + vec3(0.0, uTime * 0.5, 0.0));
-            transformed += normal * (n * 1.5);
-            vec4 kpiaWorldPos = modelMatrix * vec4(transformed, 1.0);
-            vWorldPos = kpiaWorldPos.xyz;
-            vYProgress = smoothstep(uMinY, uMaxY, kpiaWorldPos.y);`
-        );
-
-        shader.fragmentShader = shader.fragmentShader.replace(
-            '#include <common>',
-            `#include <common>
-            uniform float uTime;
-            uniform float uMinY;
-            uniform float uMaxY;
-            varying float vYProgress;
-            varying vec3 vWorldPos;`
-        );
-
-        shader.fragmentShader = shader.fragmentShader.replace(
-            '#include <dithering_fragment>',
-            `#include <dithering_fragment>
-            vec3 colorSilver = vec3(0.8, 0.8, 0.8);
-            vec3 colorOrange = vec3(1.0, 0.1, -0.5);
-            float emissiveStrength = mix(0.1, 1.0, vYProgress);
-            vec3 finalColor = mix(colorSilver, colorOrange, vYProgress);
-            gl_FragColor.rgb *= finalColor;
-            gl_FragColor.rgb += finalColor * emissiveStrength * 0.8;
-            float halfHeight = (uMaxY - uMinY) * 0.5;
-            float distY = abs(vWorldPos.y);
-            float fadeAlpha = 1.0 - smoothstep(0.0, halfHeight * 0.6, distY);
-            gl_FragColor.a = fadeAlpha;`
-        );
-    };
-
     // === Animation Frame ===
     useFrame((state) => {
         const time = state.clock.getElapsedTime();
         uniformsRef.current.uTime.value = time;
 
-        if (bridgeMatRef.current) {
+        // WebGL: 既存の ShaderMaterial uniform を更新
+        if (!isWebGPU && bridgeMatRef.current) {
             bridgeMatRef.current.uniforms.uTime.value = time;
+        }
+        // WebGPU: TSL ブリッジ uniform を更新
+        if (isWebGPU && tslBridgeResult) {
+            tslBridgeResult.uniforms.uTime.value = time;
         }
 
         if (groupRef.current) {
@@ -225,36 +199,20 @@ export function DnaModel({
             onPointerOut={() => onHoverChange?.(false)}
             onPointerMissed={() => isDnaMode && setDnaMode(false)}
         >
-            {/* Strand 1 */}
-            <mesh geometry={strandGeometry[0]}>
-                <meshPhysicalMaterial
-                    onBeforeCompile={onBeforeCompile}
-                    metalness={0.9}
-                    roughness={0.1}
-                    color={isHovered ? DNA_COLORS.hover : DNA_COLORS.base}
-                    emissive={isHovered ? DNA_COLORS.emissive.hover : DNA_COLORS.emissive.default}
-                    emissiveIntensity={isHovered ? DNA_COLORS.emissiveIntensity.hover : DNA_COLORS.emissiveIntensity.default}
-                    transparent={true}
-                    side={THREE.DoubleSide}
-                />
-            </mesh>
-
-            {/* Strand 2 */}
-            <mesh geometry={strandGeometry[1]}>
-                <meshPhysicalMaterial
-                    onBeforeCompile={onBeforeCompile}
-                    metalness={0.9}
-                    roughness={0.1}
-                    color={isHovered ? DNA_COLORS.hover : DNA_COLORS.base}
-                    emissive={isHovered ? DNA_COLORS.emissive.hover : DNA_COLORS.emissive.default}
-                    emissiveIntensity={isHovered ? DNA_COLORS.emissiveIntensity.hover : DNA_COLORS.emissiveIntensity.default}
-                    transparent={true}
-                    side={THREE.DoubleSide}
-                />
-            </mesh>
+            <DnaStrands
+                strandGeometry={strandGeometry}
+                isWebGPU={isWebGPU}
+                tslStrandMat={tslStrandMat}
+                isHovered={isHovered}
+                uniformsRef={uniformsRef}
+            />
 
             {/* Bridges */}
-            <BridgeGroup data={bridgesData} fadeRadius={HALF_HEIGHT} />
+            {isWebGPU && tslBridgeResult ? (
+                <GpuBridgeGroup data={bridgesData} material={tslBridgeResult.material} />
+            ) : (
+                <CpuBridgeGroup data={bridgesData} fadeRadius={HALF_HEIGHT} />
+            )}
 
             {/* DNA Analysis Interface */}
             <Html fullscreen style={{ pointerEvents: 'none' }} zIndexRange={[100, 0]}>
@@ -264,65 +222,4 @@ export function DnaModel({
             </Html>
         </group>
     );
-}
-
-// ============================================================================
-// Bridge Group Component
-// ============================================================================
-function BridgeGroup({ data, fadeRadius }: { data: any[], fadeRadius: number }) {
-    const mat = useMemo(() => new THREE.ShaderMaterial({
-        uniforms: {
-            uTime: { value: 0 },
-            uFadeRadius: { value: fadeRadius }
-        },
-        vertexShader: bridgeVertexShader,
-        fragmentShader: bridgeFragmentShader,
-        transparent: true,
-        blending: THREE.AdditiveBlending,
-        depthTest: false
-    }), [fadeRadius]);
-
-    const geo = useMemo(() => {
-        const segments = 12;
-        const pos = [];
-        const uvs = [];
-        for (let j = 0; j <= segments; j++) {
-            const r = j / segments;
-            pos.push(0, 0, r);
-            uvs.push(r, 0);
-        }
-        const g = new THREE.BufferGeometry();
-        g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
-        g.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
-        return g;
-    }, []);
-
-    useFrame((state) => {
-        mat.uniforms.uTime.value = state.clock.getElapsedTime();
-    });
-
-    return (
-        <group>
-            {data.map((b, i) => (
-                <BridgeInstance key={i} data={b} geometry={geo} material={mat} />
-            ))}
-        </group>
-    );
-}
-
-// ============================================================================
-// Bridge Instance Component
-// ============================================================================
-function BridgeInstance({ data, geometry, material }: { data: any, geometry: any, material: any }) {
-    const ref = useRef<THREE.Line>(null);
-
-    useEffect(() => {
-        if (!ref.current) return;
-        ref.current.position.copy(data.start);
-        ref.current.lookAt(data.end);
-        ref.current.scale.set(1, 1, data.length);
-    }, [data]);
-
-    // @ts-ignore
-    return <line ref={ref} geometry={geometry} material={material} />;
 }

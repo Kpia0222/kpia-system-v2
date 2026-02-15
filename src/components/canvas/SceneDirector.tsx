@@ -7,6 +7,7 @@ import { useStore } from "@/store/useStore";
 import { STARDUST_CONFIG } from "@/config/environment-settings";
 import { useStartupSequence } from "@/hooks/useStartupSequence";
 import { useInitialDiveSequence } from "@/hooks/useInitialDiveSequence"; // 新設フック
+import { useGlobalShortcuts } from "@/hooks/useGlobalShortcuts";
 import { strategies } from "@/components/canvas/strategies";
 
 // 各シーンの描画ロジックは Strategy Pattern により各ファイルに委譲される
@@ -18,6 +19,7 @@ export function SceneDirector() {
     // 各種シーケンスロジックをフックに委譲（SceneDirectorを250行以下に保つ）
     useStartupSequence(controlsRef);
     useInitialDiveSequence(controlsRef);
+    useGlobalShortcuts();
 
     // 現在のシーンに応じたレンダリング戦略を選択
     const currentStrategy = strategies[currentScene];

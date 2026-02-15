@@ -143,37 +143,9 @@ export const DUMMY_BEACONS = [
 // Meteor / Floating Objects
 // ============================================================================
 
-/**
- * 隕石 (浮遊物体) のデフォルト設定
- */
-export const METEOR_DEFAULTS = {
-    count: 5000,                // 隕石の数 (超・高密度銀河用に増量)
-    minRadius: 50,              // 渦巻きの中心除外範囲
-    maxRadius: 800,             // 渦巻きの最大半径
-    color: '#ffaa00',           // 基本カラー (オレンジ)
-    shapeType: 'tetrahedron' as const, // 形状タイプ
-    size: {
-        min: 0.5,
-        max: 3.0,
-    },
-    rotationSpeed: {
-        min: 0.1,
-        max: 0.5,
-    },
-    floatSpeed: {
-        min: 0.2,
-        max: 1.0,
-    }
-} as const;
 
-/**
- * カイパーベルト (外周リング) の設定
- */
-export const KUIPER_BELT = {
-    // 必要に応じて追加
-    ringWidth: 100,
-    density: 0.5,
-} as const;
+
+
 
 /**
  * 銀河クラスター (GalaxyCluster) の表示設定

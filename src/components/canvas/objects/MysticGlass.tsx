@@ -3,11 +3,14 @@
  * MeshTransmissionMaterial による透過・屈折・虹彩反射を実現
  * useFrame による動的な表面うねりアニメーション
  * 周期的に幾何学形状へモーフィング
+ * 
+ * WebGPU 時: MeshPhysicalMaterial にフォールバック
+ * (MeshTransmissionMaterial は GLSL ベースで WebGPU 非対応)
  */
 
 import { useRef, useMemo } from 'react'
 import * as THREE from 'three'
-import { useFrame } from '@react-three/fiber'
+import { useFrame, useThree } from '@react-three/fiber'
 import { useGLTF, MeshTransmissionMaterial } from '@react-three/drei'
 import { GLTF } from 'three-stdlib'
 import { MYSTIC_GLASS_MATERIAL, MYSTIC_GLASS_DEFORMATION, MYSTIC_GLASS_MORPHING } from '@/config/environment-settings'
@@ -30,6 +33,8 @@ interface MysticGlassProps {
 export function MysticGlass({ position = [0, 0, 0], scale = 1 }: MysticGlassProps) {
   const meshRef = useRef<THREE.Mesh>(null)
   const { nodes } = useGLTF('/models/mystic-glass.glb') as unknown as GLTFResult
+  const { gl } = useThree()
+  const isWebGPU = gl.constructor.name === 'WebGPURenderer'
 
   // オリジナルの頂点位置を保存（変形の基準点として使用）
   const originalPositions = useMemo(() => {
@@ -150,18 +155,32 @@ export function MysticGlass({ position = [0, 0, 0], scale = 1 }: MysticGlassProp
   return (
     <group position={position} scale={scale} dispose={null}>
       <mesh ref={meshRef} geometry={nodes.トーラス.geometry.clone()} rotation={[-0.905, -0.953, 1.84]}>
-        <MeshTransmissionMaterial
-          transmission={MYSTIC_GLASS_MATERIAL.transmission}
-          thickness={MYSTIC_GLASS_MATERIAL.thickness}
-          roughness={MYSTIC_GLASS_MATERIAL.roughness}
-          chromaticAberration={MYSTIC_GLASS_MATERIAL.chromaticAberration}
-          iridescence={MYSTIC_GLASS_MATERIAL.iridescence}
-          iridescenceIOR={MYSTIC_GLASS_MATERIAL.iridescenceIOR}
-          ior={MYSTIC_GLASS_MATERIAL.ior}
-          distortion={MYSTIC_GLASS_MATERIAL.distortion}
-          anisotropy={MYSTIC_GLASS_MATERIAL.anisotropy}
-          samples={MYSTIC_GLASS_MATERIAL.samples}
-        />
+        {isWebGPU ? (
+          /* WebGPU: MeshPhysicalMaterial (自動的に NodeMaterial に変換される) */
+          <meshPhysicalMaterial
+            transmission={MYSTIC_GLASS_MATERIAL.transmission}
+            thickness={MYSTIC_GLASS_MATERIAL.thickness}
+            roughness={MYSTIC_GLASS_MATERIAL.roughness}
+            iridescence={MYSTIC_GLASS_MATERIAL.iridescence}
+            iridescenceIOR={MYSTIC_GLASS_MATERIAL.iridescenceIOR}
+            ior={MYSTIC_GLASS_MATERIAL.ior}
+            transparent={true}
+          />
+        ) : (
+          /* WebGL: drei MeshTransmissionMaterial (フル機能) */
+          <MeshTransmissionMaterial
+            transmission={MYSTIC_GLASS_MATERIAL.transmission}
+            thickness={MYSTIC_GLASS_MATERIAL.thickness}
+            roughness={MYSTIC_GLASS_MATERIAL.roughness}
+            chromaticAberration={MYSTIC_GLASS_MATERIAL.chromaticAberration}
+            iridescence={MYSTIC_GLASS_MATERIAL.iridescence}
+            iridescenceIOR={MYSTIC_GLASS_MATERIAL.iridescenceIOR}
+            ior={MYSTIC_GLASS_MATERIAL.ior}
+            distortion={MYSTIC_GLASS_MATERIAL.distortion}
+            anisotropy={MYSTIC_GLASS_MATERIAL.anisotropy}
+            samples={MYSTIC_GLASS_MATERIAL.samples}
+          />
+        )}
       </mesh>
     </group>
   )

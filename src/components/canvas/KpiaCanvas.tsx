@@ -1,16 +1,9 @@
 "use client";
 
 import { Canvas, CanvasProps } from "@react-three/fiber";
-import { useEffect, useState } from "react";
-import * as THREE from "three";
-import { WebGPURenderer } from "three/webgpu";
+import { useCallback, useEffect, useState } from "react";
 import { shouldEnableWebGPU, isWebGPUSupported } from "@/utils/webgpu-utils";
 import { POST_PROCESSING } from "@/config/environment-settings";
-
-// Extend Three.js types to include WebGPU
-// Note: In newer three versions, WebGPURenderer might be exported differently
-// @ts-ignore
-import { WebGLRenderer } from "three";
 
 export interface KpiaCanvasProps extends Omit<CanvasProps, 'gl'> {
     children: React.ReactNode;
@@ -18,42 +11,50 @@ export interface KpiaCanvasProps extends Omit<CanvasProps, 'gl'> {
 }
 
 export function KpiaCanvas({ children, onRendererChange, ...props }: KpiaCanvasProps) {
-    const [isWebGPU, setIsWebGPU] = useState(false);
-    const [renderer, setRenderer] = useState<any>(null);
+    const [useWebGPU, setUseWebGPU] = useState(false);
+    const [ready, setReady] = useState(false);
 
     useEffect(() => {
-        const initRenderer = async () => {
+        const checkRenderer = async () => {
             const requested = shouldEnableWebGPU() || POST_PROCESSING.renderer.useWebGPU;
             const supported = await isWebGPUSupported();
 
             if (requested && supported) {
-                console.log("🚀 Initializing WebGPU Renderer...");
-                // Create WebGPURenderer instance
-                // @ts-ignore - Types might not be fully updated for experimental features
-                const gpuRenderer = new WebGPURenderer({ antialias: true });
-                setRenderer(gpuRenderer);
-                setIsWebGPU(true);
+                console.log("🚀 WebGPU Renderer will be initialized...");
+                setUseWebGPU(true);
                 onRendererChange?.(true);
             } else {
                 console.log("🎨 Initializing WebGL Renderer (Default)...");
-                setIsWebGPU(false);
+                setUseWebGPU(false);
                 onRendererChange?.(false);
-                // For WebGL, we don't need to pass a custom renderer instance,
-                // R3F handles it automatically if 'gl' prop is undefined.
-                setRenderer(undefined);
             }
+            setReady(true);
         };
 
-        initRenderer();
+        checkRenderer();
     }, [onRendererChange]);
 
-    // If explicit renderer is created (WebGPU), pass it. Otherwise pass undefined (WebGL default)
-    const glProps = renderer ? { gl: renderer } : {};
+    /**
+     * R3F v9 推奨: async ファクトリ関数で WebGPURenderer を初期化。
+     * Canvas が canvas 要素を渡してくるので、それを使ってレンダラーを生成する。
+     */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const createWebGPURenderer = useCallback(async (canvas: any) => {
+        const { WebGPURenderer } = await import("three/webgpu");
+        const renderer = new WebGPURenderer({ canvas, antialias: true });
+        await renderer.init();
+        console.log("✅ WebGPU Renderer initialized successfully.");
+        return renderer;
+    }, []);
+
+    // レンダラー検出結果が出るまで待機
+    if (!ready) return null;
 
     return (
         <Canvas
             {...props}
-            {...glProps}
+            gl={useWebGPU ? createWebGPURenderer : undefined}
+            style={{ position: 'absolute', inset: 0, zIndex: 0 }}
         >
             {children}
         </Canvas>

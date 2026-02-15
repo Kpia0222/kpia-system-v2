@@ -1,10 +1,9 @@
 "use client";
 
 import { Canvas, useFrame } from "@react-three/fiber";
-import { InstancedMesh, Color, BufferGeometry, BoxGeometry, OctahedronGeometry, TetrahedronGeometry, MeshPhysicalMaterial, Object3D, Vector3 } from "three";
-import { useRef, useMemo, useEffect, useState, RefObject } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import * as THREE from "three";
+import { InstancedMesh, MeshPhysicalMaterial, Object3D, Vector3 } from "three";
+import { useRef, useMemo, useEffect, RefObject } from "react";
+
 import { useControls } from "leva";
 import { STARTUP_TRANSITION } from "@/config/camera-settings";
 
